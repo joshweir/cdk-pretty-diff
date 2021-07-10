@@ -1,0 +1,42 @@
+{
+  "name": "cdk-play",
+  "description": "",
+  "license": "UNLICENSED",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.22",
+    "@types/node": "10.17.5",
+    "@types/through2": "^2.0.36",
+    "aws-cdk": "1.27.0",
+    "aws-sdk": "^2.796.0",
+    "jest": "^24.9.0",
+    "lodash": "^4.17.15",
+    "ts-jest": "^24.1.0",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.8.3",
+    "uuid": "^7.0.2"
+  },
+  "dependencies": {
+    "@aws-cdk/assert": "1.27.0",
+    "@aws-cdk/aws-apigateway": "1.74.0",
+    "@aws-cdk/aws-apigatewayv2": "1.74.0",
+    "@aws-cdk/aws-apigatewayv2-integrations": "1.74.0",
+    "@aws-cdk/aws-certificatemanager": "1.74.0",
+    "@aws-cdk/aws-cognito": "1.74.0",
+    "@aws-cdk/aws-dynamodb": "1.74.0",
+    "@aws-cdk/aws-lambda": "1.74.0",
+    "@aws-cdk/aws-route53-targets": "1.74.0",
+    "@aws-cdk/core": "1.74.0",
+    "@aws-cdk/custom-resources": "1.74.0",
+    "@aws-cdk/cx-api": "1.74.0",
+    "@aws-cdk/aws-cloudformation": "1.74.0",
+    "aws-cdk": "1.74.0",
+    "through2": "^4.0.2"
+  }
+}
