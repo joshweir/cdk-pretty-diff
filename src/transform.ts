@@ -13,20 +13,23 @@ import {
 } from "./types";
 import { deepSubstituteBracedLogicalIds } from "./cdk-reverse-engineered";
 
+// unable to emulate the --no-colors option, (tried passing no-colors option to cdk Configuration class to no avail)
+// this is workaround to remove the colors tty elements
+const fixRemoveColors = (input: string): string => JSON.parse(JSON.stringify(input).replace(/\\u001b\[[^m]+m/g, ''))
+
 const buildRaw = async (diff: StackRawDiff): Promise<string> => {
   const strm = through2();
   cfnDiff.formatDifferences(strm, diff.rawDiff, diff.logicalToPathMap);
   strm.end();
-  const raw = await streamToString(strm);
-  return raw;
+  return fixRemoveColors(await streamToString(strm));
 };
 
 const buildChangeAction = (oldValue: any, newValue: any) => {
   if (oldValue !== undefined && newValue !== undefined) {
     return "UPDATE";
-  } else if (oldValue !== undefined /* && newValue === undefined*/) {
+  } else if (oldValue !== undefined) {
     return "REMOVAL";
-  } /* if (oldValue === undefined && newValue !== undefined) */ else {
+  } else {
     return "ADDITION";
   }
 };
@@ -43,11 +46,13 @@ const transformIamChanges = async (
     const statementsSummarized = diff.rawDiff.iamChanges.summarizeStatements();
     result.push({
       label: "IAM Statement Changes",
-      cdkDiffRaw: cfnDiff.formatTable(
-        deepSubstituteBracedLogicalIds(diff.logicalToPathMap)(
-          statementsSummarized
-        ),
-        undefined
+      cdkDiffRaw: fixRemoveColors(
+        cfnDiff.formatTable(
+          deepSubstituteBracedLogicalIds(diff.logicalToPathMap)(
+            statementsSummarized
+          ),
+          undefined
+        )
       ),
     });
   }
@@ -57,11 +62,13 @@ const transformIamChanges = async (
       diff.rawDiff.iamChanges.summarizeManagedPolicies();
     result.push({
       label: "IAM Policy Changes",
-      cdkDiffRaw: cfnDiff.formatTable(
-        deepSubstituteBracedLogicalIds(diff.logicalToPathMap)(
-          managedPoliciesSummarized
-        ),
-        undefined
+      cdkDiffRaw: fixRemoveColors(
+        cfnDiff.formatTable(
+          deepSubstituteBracedLogicalIds(diff.logicalToPathMap)(
+            managedPoliciesSummarized
+          ),
+          undefined
+        )
       ),
     });
   }
@@ -81,9 +88,11 @@ const transformSecurityGroupChanges = async (
   return [
     {
       label: "Security Group Changes",
-      cdkDiffRaw: cfnDiff.formatTable(
-        deepSubstituteBracedLogicalIds(diff.logicalToPathMap)(summarized),
-        undefined
+      cdkDiffRaw: fixRemoveColors(
+        cfnDiff.formatTable(
+          deepSubstituteBracedLogicalIds(diff.logicalToPathMap)(summarized),
+          undefined
+        )
       ),
     },
   ];
@@ -92,13 +101,11 @@ const transformSecurityGroupChanges = async (
 const processIndividualDiff =
   (result: NicerDiff[], cdkDiffCategory: CdkDiffCategory) =>
   (id: string, rdiff: cfnDiff.Difference<any>) => {
-    // console.log('chk', id);
-    // console.log(JSON.stringify(rdiff, null, 2));
     if (rdiff.isDifferent) {
       const resourceType: string = guardResourceDiff(rdiff)
-        ? (rdiff.isRemoval ? rdiff.oldResourceType : rdiff.newResourceType) ||
+        ? (rdiff.isRemoval ? rdiff.oldValue?.Type : rdiff.newValue?.Type) ||
           cdkDiffCategory
-        : cdkDiffCategory;
+        : (rdiff.oldValue?.Type || rdiff.newValue?.Type || cdkDiffCategory);
       const changes: NicerDiffChange[] = [];
       if (guardResourceDiff(rdiff) && rdiff.isUpdate) {
         rdiff.forEachDifference((_, label, values) => {
@@ -152,12 +159,14 @@ export const transformDiff = async (
 ): Promise<NicerStackDiff> => {
   if (diff.rawDiff.isEmpty) {
     return {
+      stackName: diff.stackName,
       raw: "There were no differences",
       diff: [],
     };
   }
 
   return {
+    stackName: diff.stackName,
     raw: await buildRaw(diff),
     diff: [
       ...(await transformIamChanges(diff)),

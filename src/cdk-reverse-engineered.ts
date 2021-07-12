@@ -121,8 +121,12 @@ class CustomCdkToolkit extends CdkToolkit {
 
 // reverse engineered from node_modules/aws-cdk/bin/cdk.js
 export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
-  colors.disable();
-  const configuration = new Configuration();
+  const configuration = new Configuration(
+    // { 
+    //   _: ['diff' as any],
+    //   'no-color': true 
+    // }
+  );
   await configuration.load();
   const sdkProvider = await SdkProvider.withAwsCliCompatibleDefaults({
       // profile: configuration.settings.get(['profile']),
@@ -133,6 +137,8 @@ export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
       sdkProvider,
       synthesizer: execProgram,
   });
+
+  colors.disable();
 
   return new CustomCdkToolkit({
     cloudExecutable,

@@ -11,8 +11,8 @@ export type StackRawDiff = {
 
 export type NicerDiffChange = {
   label: string;
-  from: string;
-  to: string;
+  from: any;
+  to: any;
   action: 'ADDITION' | 'UPDATE' | 'REMOVAL';
 }
 export type NicerDiff = {
@@ -29,11 +29,12 @@ export type NicerDiff = {
 export type NicerStackDiff = {
   diff?: NicerDiff[];
   raw: string;
+  stackName: string;
 }
 
 export const guardResourceDiff = (thing: any): thing is cfnDiff.ResourceDifference =>
   typeof thing === 'object' &&
-  thing.hasOwnProperty('forEachDifference');
+  typeof thing.forEachDifference === 'function';
 
 
 export const diffValidator = (thing: any): { diffCollectionKey: CdkDiffCategory; diffCollection: cfnDiff.DifferenceCollection<any, cfnDiff.Difference<any>> } => {

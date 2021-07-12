@@ -1,4 +1,6 @@
-import { getCustomDiff } from '../src/index';
+import { resolve } from 'path';
+import { writeFileSync } from 'fs';
+import { getCustomDiff, renderCustomDiffToHtmlString } from '../src/index';
 
 const noop = (...args: any[]) => undefined;
 
@@ -12,9 +14,8 @@ const debug = verboseMode ? console.debug : noop;
 
 const main = async () => {
   const nicerDiffs = await getCustomDiff();
-  console.log('****** START CUSTOM DIFF ******');
-  console.log(JSON.stringify(nicerDiffs, null, 2));
-  console.log('****** END CUSTOM DIFF ******');
+  const html = renderCustomDiffToHtmlString(nicerDiffs, 'CDK Diff');
+  writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
 };
 
 process.on('SIGTERM', () => {
