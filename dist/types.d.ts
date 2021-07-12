@@ -24,11 +24,13 @@ export declare type NicerDiff = {
         changes: NicerDiffChange[];
     };
 };
+export declare const nicerDiffGuard: (thing: any) => thing is NicerDiff;
 export declare type NicerStackDiff = {
     diff?: NicerDiff[];
     raw: string;
     stackName: string;
 };
+export declare const nicerStackDiffValidator: (thing: any) => NicerStackDiff;
 export declare const guardResourceDiff: (thing: any) => thing is cfnDiff.ResourceDifference;
 export declare const diffValidator: (thing: any) => {
     diffCollectionKey: CdkDiffCategory;

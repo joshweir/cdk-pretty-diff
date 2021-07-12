@@ -26,10 +26,32 @@ export type NicerDiff = {
     changes: NicerDiffChange[];
   }
 }
+export const nicerDiffGuard = (thing: any): thing is NicerDiff =>
+  typeof thing === 'object' &&
+  typeof thing.label === 'string' &&
+  typeof thing.cdkDiffRaw === 'string' &&
+  ['undefined', 'object'].includes(typeof thing.nicerDiff);
+
 export type NicerStackDiff = {
   diff?: NicerDiff[];
   raw: string;
   stackName: string;
+}
+
+export const nicerStackDiffValidator = (thing: any): NicerStackDiff => {
+  if (typeof thing === 'object') {
+    if (typeof thing.raw === 'string' && typeof thing.stackName === 'string') {
+      if (!!thing.diff) {
+        if (thing.diff.filter(nicerDiffGuard).length === thing.diff.length) {
+          return thing;
+        }
+      }
+
+      return thing;
+    }
+  }
+
+  throw new Error(`not a NicerStackDiff: ${JSON.stringify(thing, null, 2)}`);
 }
 
 export const guardResourceDiff = (thing: any): thing is cfnDiff.ResourceDifference =>
