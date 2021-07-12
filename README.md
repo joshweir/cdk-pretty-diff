@@ -37,7 +37,7 @@ writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
 
 html sample screenshot: 
 
-![HTML Sample Screenshot](https://github.com/joshweir/cdk-pretty-diff/pretty-diff-html-sample.png)
+![HTML Sample Screenshot](https://github.com/joshweir/cdk-pretty-diff/blob/master/pretty-diff-html-sample.png?raw=true)
 
 ## Development
 
