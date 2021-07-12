@@ -6,7 +6,7 @@
   "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joshweir/cdk-pretty-diff"
+    "url": "git+https://github.com/joshweir/cdk-pretty-diff.git"
   },
   "keywords": [
     "cdk",
@@ -63,5 +63,10 @@
     "@aws-cdk/aws-cloudformation": ">= 1.74.0",
     "@aws-cdk/aws-sns-subscriptions": ">= 1.74.0",
     "aws-cdk": ">= 1.74.0"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/joshweir/cdk-pretty-diff/issues"
+  },
+  "homepage": "https://github.com/joshweir/cdk-pretty-diff#readme",
+  "main": "dist/index.js"
 }
