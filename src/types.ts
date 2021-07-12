@@ -38,20 +38,30 @@ export type NicerStackDiff = {
   stackName: string;
 }
 
-export const nicerStackDiffValidator = (thing: any): NicerStackDiff => {
+export const nicerStackDiffGuard = (thing: any): thing is NicerStackDiff => {
   if (typeof thing === 'object') {
     if (typeof thing.raw === 'string' && typeof thing.stackName === 'string') {
       if (!!thing.diff) {
         if (thing.diff.filter(nicerDiffGuard).length === thing.diff.length) {
-          return thing;
+          return true;
         }
       }
 
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export const nicerStackDiffValidator = (thing: any): NicerStackDiff[] => {
+  if (typeof thing === 'object') {
+    if (thing.filter(nicerStackDiffGuard).length === thing.length) {
       return thing;
     }
   }
 
-  throw new Error(`not a NicerStackDiff: ${JSON.stringify(thing, null, 2)}`);
+  throw new Error(`input is not a NicerStackDiff[]: ${JSON.stringify(thing, null, 2)}`);
 }
 
 export const guardResourceDiff = (thing: any): thing is cfnDiff.ResourceDifference =>

@@ -30,7 +30,8 @@ export declare type NicerStackDiff = {
     raw: string;
     stackName: string;
 };
-export declare const nicerStackDiffValidator: (thing: any) => NicerStackDiff;
+export declare const nicerStackDiffGuard: (thing: any) => thing is NicerStackDiff;
+export declare const nicerStackDiffValidator: (thing: any) => NicerStackDiff[];
 export declare const guardResourceDiff: (thing: any) => thing is cfnDiff.ResourceDifference;
 export declare const diffValidator: (thing: any) => {
     diffCollectionKey: CdkDiffCategory;
