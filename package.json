@@ -7,6 +7,14 @@
     "type": "git",
     "url": "https://github.com/joshweir/cdk-pretty-diff"
   },
+  "keywords": [
+    "cdk",
+    "cdk diff",
+    "cdk pretty diff",
+    "cdk diff pretty",
+    "cdk deploy",
+    "pretty"
+  ],
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
