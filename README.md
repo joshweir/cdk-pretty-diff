@@ -27,6 +27,12 @@ console.log(JSON.stringify(nicerDiffs, null, 2));
 
 ### Render Pretty CDK Diff to html
 
+html sample screenshot: 
+
+![HTML Sample Screenshot](https://github.com/joshweir/cdk-pretty-diff/blob/master/pretty-diff-html-sample.png?raw=true)
+
+* Original CDK Diff output is available (click the `Orig CDK Diff` button)
+
 ``` typescript
 import { getCustomDiff, renderCustomDiffToHtmlString } from 'cdk-pretty-diff';
 
@@ -34,10 +40,6 @@ const nicerDiffs = await getCustomDiff();
 const html = renderCustomDiffToHtmlString(nicerDiffs, 'CDK Diff');
 writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
 ```
-
-html sample screenshot: 
-
-![HTML Sample Screenshot](https://github.com/joshweir/cdk-pretty-diff/blob/master/pretty-diff-html-sample.png?raw=true)
 
 ## Development
 
