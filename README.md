@@ -1,6 +1,6 @@
 # CDK Pretty Diff
 
-Format (ugly) `cdk diff` output to html making review easier. Inspired by [Terraform prettyplan](https://github.com/chrislewisdev/prettyplan).
+Format `cdk diff` output to html making review easier. Inspired by [Terraform prettyplan](https://github.com/chrislewisdev/prettyplan).
 
 ## Installation
 
