@@ -1,5 +1,7 @@
 import { resolve } from "path";
 import { readFileSync } from "fs";
+import { createTwoFilesPatch } from 'diff';
+import * as diff2html from 'diff2html';
 
 import { NicerDiff, NicerDiffChange, NicerStackDiff } from "./types";
 
@@ -35,40 +37,72 @@ const prettifyJson = (maybeJson: string): string => {
 
 const components = {
   badge: (label: string): string => `
-      <span class="badge">${label}</span>
+    <span class="badge">${label}</span>
   `,
 
   id: (id: any): string => `
-      <span class="id">
-          <span class="id-segment type">${id.resourceType}</span>
-          <span class="id-segment name">${id.resourceLabel}</span>
-      </span>
+    <span class="id">
+      <span class="id-segment type">${id.resourceType}</span>
+      <span class="id-segment name">${id.resourceLabel}</span>
+    </span>
   `,
 
   warning: (warning: any): string => `
-      <li>
-          ${components.badge("warning")}
-          ${components.id(warning.id)}
-          <span>${warning.detail}</span>
-      </li>
+    <li>
+      ${components.badge("warning")}
+      ${components.id(warning.id)}
+      <span>${warning.detail}</span>
+    </li>
   `,
 
   changeCount: (count: number): string => `
-      <span class="change-count">
-          ${`${count} change${count > 1 ? "s" : ""}`}
-      </span>
+    <span class="change-count">
+      ${`${count} change${count > 1 ? "s" : ""}`}
+    </span>
   `,
 
-  change: ({ action, from, to, label }: NicerDiffChange): string => `
+  changeNoDiff: ({ action, to, label }: NicerDiffChange): string => `
     <tr>
       <td class="property">
         ${label}
         ${`<br /><span class="forces-new-resource">(${action})</span>`}
       </td>
-      <td class="old-value">${from ? prettify(from) : ""}</td>
       <td class="new-value">${prettify(to)}</td>
     </tr>
   `,
+
+  changeDiff: ({ from, to, label }: NicerDiffChange): string => `
+    <div>
+      ${diff2html.html(
+        createTwoFilesPatch(label, label, prettify(from), prettify(to)),
+        {
+          outputFormat: 'line-by-line',
+          drawFileList: false,
+          matching: 'words',
+          matchWordsThreshold: 0.25,
+          matchingMaxComparisons: 200,
+        }
+      )}
+    </div>
+  `,
+
+  changes: (changes: NicerDiffChange[]) => {
+    const diffChanges = changes.filter(({ from }) => !!from);
+    const noDiffChanges = changes.filter(({ from }) => !from);
+
+    return `
+      <div class="changes-breakdown">
+        <div class="no-diff-changes-breakdown">
+          ${noDiffChanges.length ? (`
+            <table>
+              ${noDiffChanges.map(components.changeNoDiff).join("")}
+            </table>
+          `) : ''}
+        </div>
+        ${diffChanges.map(components.changeDiff).join("")}
+      </table>
+    `
+  },
 
   action: ({ cdkDiffRaw, nicerDiff, label }: NicerDiff): string => `
     <li class="${nicerDiff?.resourceAction.toLocaleLowerCase() || "create"}">
@@ -77,18 +111,11 @@ const components = {
         ${components.id(
           nicerDiff || { resourceType: "", resourceLabel: label }
         )}
-        ${
-          nicerDiff?.changes
-            ? components.changeCount(nicerDiff.changes.length)
-            : ""
-        }
       </div>
       <div class="changes collapsed">
         ${
           nicerDiff?.changes.length
-            ? `<table>
-              ${nicerDiff?.changes.map(components.change).join("")}
-          </table>`
+            ? components.changes(nicerDiff.changes)
             : ""
         }
         ${components.rawDiff(cdkDiffRaw, "CDK Diff Output", {
@@ -119,9 +146,7 @@ const components = {
           : `<button onclick="accordion(this)">${toggleCaption}</button>`
       }
       <div class="changes ${opts?.collapsed ? "collapsed" : ""}">
-          <pre>
-            ${raw}
-          </pre>
+          <pre>${raw}</pre>
       </div>
     </div>
   `,

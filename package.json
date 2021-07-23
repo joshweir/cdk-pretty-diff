@@ -25,6 +25,8 @@
     "@types/jest": "^24.0.22",
     "@types/node": "10.17.5",
     "@types/through2": "^2.0.36",
+    "@types/diff": "^5.0.1",
+    "@types/hogan.js": "^3.0.1",
     "aws-sdk": "^2.796.0",
     "jest": "^26.6.3",
     "lodash": "^4.17.15",
@@ -47,7 +49,9 @@
     "aws-cdk": ">= 1.74.0"
   },
   "dependencies": {
-    "through2": "^4.0.2"
+    "through2": "^4.0.2",
+    "diff2html": "^3.4.7",
+    "diff": "^5.0.0"
   },
   "peerDependencies": {
     "@aws-cdk/assert": ">= 1.27.0",

@@ -1,6 +1,6 @@
 # CDK Pretty Diff
 
-Format ugly `cdk diff` output to html making review easier. Inspired by [Terraform prettyplan](https://github.com/chrislewisdev/prettyplan).
+Format (ugly) `cdk diff` output to html making review easier. Inspired by [Terraform prettyplan](https://github.com/chrislewisdev/prettyplan).
 
 ## Installation
 
@@ -34,6 +34,8 @@ html sample screenshot:
 * Original CDK Diff output is available (click the `Orig CDK Diff` button)
 
 ``` typescript
+import { resolve } from 'path';
+import { writeFileSync } from 'fs';
 import { getCustomDiff, renderCustomDiffToHtmlString } from 'cdk-pretty-diff';
 
 const nicerDiffs = await getCustomDiff();
