@@ -10,11 +10,7 @@ npm install cdk-pretty-diff
 
 ## Usage 
 
-Instead of running cdk diff command line and receiving ugly diff output: 
-
-```
-cdk diff
-```
+Instead of running `cdk diff` command line and receiving ugly diff output, use `cdk-pretty-diff` (in javascript). Examples below.
 
 ### Get cdk diff as an object
 
