@@ -7,6 +7,7 @@ import { SdkProvider } from 'aws-cdk/lib/api/aws-auth';
 import { CloudFormationDeployments } from 'aws-cdk/lib/api/cloudformation-deployments';
 import { CloudExecutable } from 'aws-cdk/lib/api/cxapp/cloud-executable';
 import { execProgram } from 'aws-cdk/lib/api/cxapp/exec';
+import { PluginHost } from 'aws-cdk/lib/plugin';
 import * as colors from 'colors/safe';
 
 import { StackRawDiff } from './types';
@@ -137,8 +138,32 @@ export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
       sdkProvider,
       synthesizer: execProgram,
   });
-
   colors.disable();
+
+  function loadPlugins(...settings: any[]) {
+    const loaded = new Set();
+    for (const source of settings) {
+      const plugins = source.get(['plugin']) || [];
+      for (const plugin of plugins) {
+        const resolved = tryResolve(plugin);
+        if (loaded.has(resolved)) {
+          continue;
+        }
+        console.debug(`Loading plug-in: ${plugin} from ${resolved}`);
+        PluginHost.instance.load(plugin);
+        loaded.add(resolved);
+      }
+    }
+    function tryResolve(plugin: string) {
+      try {
+        return require.resolve(plugin);
+      }
+      catch (e) {
+        throw new Error(`Unable to resolve plug-in: ${plugin}`);
+      }
+    }
+  }
+  loadPlugins(configuration.settings);
 
   return new CustomCdkToolkit({
     cloudExecutable,

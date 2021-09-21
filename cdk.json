@@ -1,3 +1,4 @@
 {
-  "app": "node dist/cdk-test/index.js"
+  "app": "node dist/cdk-test/index.js",
+  "plugin": ["cdk-assume-role-credential-plugin"]
 }

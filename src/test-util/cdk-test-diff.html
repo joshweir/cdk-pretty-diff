@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>CDK Diff</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        text-rendering: optimizeLegibility;
+        background: #ecf7fe;
+        color: #000000c0;
+        font-size: 15px;
+        margin: 0;
+      }
+      @keyframes fade-in {
+        0% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .stripe {
+        width: 100%;
+        height: 5px;
+        background: #5c4ce4;
+        animation-name: wipe-in;
+        animation-duration: 1s;
+      }
+      @keyframes wipe-in {
+        0% {
+          width: 0%;
+        }
+        100% {
+          width: 100%;
+        }
+      }
+
+      #release-notification {
+        background: #5c4ce4;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        overflow: hidden;
+        padding: 10px 0 15px 0;
+        height: 20px;
+        animation-name: notification-pop-in;
+        animation-duration: 2s;
+      }
+      #release-notification a {
+        color: white;
+      }
+      #release-notification.dismissed {
+        animation-name: notification-pop-out;
+        animation-duration: 0.5s;
+        height: 0;
+        padding: 0;
+      }
+      @keyframes notification-pop-in {
+        0% {
+          height: 0;
+          padding: 0;
+        }
+        50% {
+          height: 0;
+          padding: 0;
+        }
+      }
+      @keyframes notification-pop-out {
+        0% {
+          height: 20px;
+          padding: 10px 0 15px 0;
+        }
+        100% {
+          height: 0;
+          padding: 0;
+        }
+      }
+
+      #modal-container {
+        animation-name: fade-in;
+        animation-duration: 0.2s;
+      }
+      .modal-pane {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #ffffffe6;
+        z-index: 10;
+      }
+      .modal-content {
+        position: fixed;
+        width: 60%;
+        height: 60%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #ffffff;
+        box-shadow: 0 2px 6px 0 hsla(0, 0%, 0%, 0.2);
+        z-index: 20;
+      }
+      .modal-close {
+        position: absolute;
+        right: 0;
+        padding: 10px;
+      }
+      .modal-close button.text-button {
+        color: #4526ac;
+        text-decoration: none;
+        font-weight: normal;
+      }
+      .release-notes {
+        max-width: 80%;
+        margin: 0 auto 0 auto;
+        overflow-y: auto;
+        max-height: 100%;
+      }
+
+      #branding {
+        float: right;
+        padding-top: 10px;
+        padding-right: 10px;
+        font-size: 10px;
+        color: #4526ac;
+        text-align: right;
+      }
+      #branding a {
+        color: #4526ac;
+      }
+
+      .container {
+        margin: 10px 10px 0 10px;
+        animation-name: fade-in;
+        animation-duration: 1s;
+      }
+      @media only screen and (min-width: 600px) {
+        .container {
+          max-width: 80%;
+          margin-left: auto;
+          margin-right: auto;
+        }
+      }
+
+      h1,
+      h2 {
+        text-align: center;
+        color: #4526ac;
+      }
+
+      #terraform-plan {
+        width: 100%;
+        min-height: 300px;
+        border: none;
+        box-shadow: 0 2px 6px 0 hsla(0, 0%, 0%, 0.2);
+        padding: 10px;
+        margin-bottom: 10px;
+        resize: none;
+        background: #ffffffe6;
+      }
+
+      button {
+        font-size: 18px;
+        background: #5c4ce4;
+        color: #fff;
+        box-shadow: 0 2px 6px 0 hsla(0, 0%, 0%, 0.2);
+        border: none;
+        border-radius: 2px;
+        min-width: 170px;
+        height: 40px;
+      }
+      button:hover {
+        background: #6567ea;
+        cursor: pointer;
+      }
+      button:active {
+        background: #5037ca;
+      }
+      button.text-button {
+        background: none;
+        box-shadow: none;
+        border-radius: 0;
+        width: auto;
+        height: auto;
+        text-decoration: underline;
+        font-size: inherit;
+        font-weight: inherit;
+        font-family: Arial, Helvetica, sans-serif;
+        color: inherit;
+        text-align: inherit;
+        padding: 0;
+      }
+
+      #parsing-error-message {
+        background-color: #ffffff;
+        padding: 10px;
+        color: #000000c0;
+        margin: 4px;
+        box-shadow: 0 2px 6px 0 hsla(0, 0%, 0%, 0.2);
+        font-weight: bold;
+        border-left: 2px solid red;
+        animation-name: error;
+        animation-duration: 1s;
+      }
+
+      @keyframes error {
+        0% {
+          background-color: red;
+        }
+        100% {
+          background-color: white;
+        }
+      }
+
+      .prettyplan ul {
+        padding-left: 0;
+        font-size: 13px;
+      }
+
+      .prettyplan li {
+        list-style: none;
+        background: #ffffffe6;
+        padding: 10px;
+        color: #000000c0;
+        margin: 4px;
+        box-shadow: 0 2px 6px 0 hsla(0, 0%, 0%, 0.2);
+      }
+
+      .prettyplan ul.warnings li {
+        border-left: 3px solid #757575;
+      }
+
+      .prettyplan ul.actions li.update {
+        border-left: 3px solid #ff8f00;
+      }
+      .prettyplan ul.actions li.create {
+        border-left: 3px solid #2e7d32;
+      }
+      .prettyplan ul.actions li.addition {
+        border-left: 3px solid #2e7d32;
+      }
+      .prettyplan ul.actions li.destroy {
+        border-left: 3px solid #b71c1c;
+      }
+      .prettyplan ul.actions li.removal {
+        border-left: 3px solid #b71c1c;
+      }
+      .prettyplan ul.actions li.recreate {
+        border-left: 3px solid #1565c0;
+      }
+      .prettyplan ul.actions li.read {
+        border-left: 3px solid #519bf0;
+      }
+
+      .badge {
+        display: inline-block;
+        text-transform: uppercase;
+        margin-right: 10px;
+        padding: 3px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .warnings .badge {
+        color: #757575;
+      }
+      li.update .badge {
+        color: #ff8f00;
+      }
+      li.create .badge {
+        color: #2e7d32;
+      }
+      li.addition .badge {
+        color: #2e7d32;
+      }
+      li.destroy .badge {
+        color: #b71c1c;
+      }
+      li.removal .badge {
+        color: #b71c1c;
+      }
+      li.recreate .badge {
+        color: #1565c0;
+      }
+      li.read .badge {
+        color: #519bf0;
+      }
+
+      .id-segment:not(:last-child)::after {
+        content: ' > ';
+      }
+      .id-segment.name,
+      .id-segment.type {
+        font-weight: bold;
+      }
+
+      .change-count {
+        float: right;
+      }
+
+      .summary {
+        cursor: pointer;
+      }
+
+      .no-diff-changes-breakdown {
+        margin: 5px auto 0 auto;
+        padding: 5px;
+      }
+      .no-diff-changes-breakdown table {
+        width: 100%;
+        word-break: break-all;
+        font-size: 13px;
+      }
+      .no-diff-changes-breakdown table td {
+        padding: 10px;
+        width: 40%;
+      }
+      pre {
+        white-space: pre-wrap;
+        background: #f3f3f3;
+      }
+      .no-diff-changes-breakdown table td.property {
+        width: 20%;
+        text-align: right;
+        font-weight: bold;
+      }
+      .no-diff-changes-breakdown table tr:nth-child(even) {
+        background-color: #f5f5f5;
+      }
+
+      .forces-new-resource {
+        color: #b71c1c;
+      }
+
+      .collapsed,
+      .hidden {
+        display: none;
+      }
+
+      .actions button {
+        background: none;
+        border: none;
+        text-decoration: underline;
+        color: black;
+        box-shadow: none;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .d2h-icon {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stripe"></div>
+    <div class="container">
+      <h1>CDK Diff</h1>
+      <div id="parsing-error-message" class="hidden">
+        That doesn't look like a Terraform plan. Did you copy the entire output (without colouring) from the plan
+        command?
+      </div>
+      <div id="prettyplan" class="prettyplan">
+        <ul id="errors" class="errors"></ul>
+        <ul id="warnings" class="warnings"></ul>
+        <button class="expand-all" onclick="expandAll()">Expand all</button>
+        <button class="collapse-all hidden" onclick="collapseAll()">Collapse all</button>
+        <div id="stacks">
+    <div class="stack">
+      <h2>JoshStack</h2>
+      
+    <div class="raw-diff">
+      <button onclick="accordion(this)">Orig CDK Diff</button>
+      <div class="changes collapsed">
+          <pre>Parameters
+[-] Parameter AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3Bucket302ABB09: {"Type":"String","Description":"S3 bucket for asset \"804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97\""}
+[-] Parameter AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3VersionKey4C878B0E: {"Type":"String","Description":"S3 key for asset version \"804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97\""}
+[-] Parameter AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97ArtifactHash6F137924: {"Type":"String","Description":"Artifact hash for asset \"804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97\""}
+[+] Parameter AssetParameters/476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3/S3Bucket AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3Bucket77CF327B: {"Type":"String","Description":"S3 bucket for asset \"476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3\""}
+[+] Parameter AssetParameters/476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3/S3VersionKey AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3VersionKey0F68B949: {"Type":"String","Description":"S3 key for asset version \"476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3\""}
+[+] Parameter AssetParameters/476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3/ArtifactHash AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3ArtifactHashE106A955: {"Type":"String","Description":"Artifact hash for asset \"476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3\""}
+
+Conditions
+[~] Condition CDKMetadata/Condition CDKMetadataAvailable: {"Fn::Or":[{"Fn::Or":[{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-east-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-northeast-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-northeast-2"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-south-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-southeast-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-southeast-2"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ca-central-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"cn-north-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"cn-northwest-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-central-1"]}]},{"Fn::Or":[{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-north-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-west-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-west-2"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-west-3"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"me-south-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"sa-east-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"us-east-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"us-east-2"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"us-west-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"us-west-2"]}]}]} to {"Fn::Or":[{"Fn::Or":[{"Fn::Equals":[{"Ref":"AWS::Region"},"af-south-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-east-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-northeast-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-northeast-2"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-south-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-southeast-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ap-southeast-2"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"ca-central-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"cn-north-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"cn-northwest-1"]}]},{"Fn::Or":[{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-central-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-north-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-south-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-west-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-west-2"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"eu-west-3"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"me-south-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"sa-east-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"us-east-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"us-east-2"]}]},{"Fn::Or":[{"Fn::Equals":[{"Ref":"AWS::Region"},"us-west-1"]},{"Fn::Equals":[{"Ref":"AWS::Region"},"us-west-2"]}]}]}
+
+Resources
+[+] AWS::SQS::Queue JoshQueue2 JoshQueue2C9D19A77 
+[~] AWS::Lambda::Function JoshLambda JoshLambdaC8236207 
+ ├─ [~] Code
+ │   ├─ [~] .S3Bucket:
+ │   │   └─ [~] .Ref:
+ │   │       ├─ [-] AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3Bucket302ABB09
+ │   │       └─ [+] AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3Bucket77CF327B
+ │   └─ [~] .S3Key:
+ │       └─ [~] .Fn::Join:
+ │           └─ @@ -8,7 +8,7 @@
+ │              [ ]   "Fn::Split": [
+ │              [ ]     "||",
+ │              [ ]     {
+ │              [-]       "Ref": "AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3VersionKey4C878B0E"
+ │              [+]       "Ref": "AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3VersionKey0F68B949"
+ │              [ ]     }
+ │              [ ]   ]
+ │              [ ] }
+ │              @@ -21,7 +21,7 @@
+ │              [ ]   "Fn::Split": [
+ │              [ ]     "||",
+ │              [ ]     {
+ │              [-]       "Ref": "AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3VersionKey4C878B0E"
+ │              [+]       "Ref": "AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3VersionKey0F68B949"
+ │              [ ]     }
+ │              [ ]   ]
+ │              [ ] }
+ ├─ [~] Environment
+ │   └─ [~] .Variables:
+ │       ├─ [+] Added: .BAZ
+ │       └─ [~] .POOP:
+ │           ├─ [-] FOO
+ │           └─ [+] FOO2
+ ├─ [~] Runtime
+ │   ├─ [-] nodejs10.x
+ │   └─ [+] nodejs12.x
+ └─ [~] Metadata
+     └─ [~] .aws:asset:path:
+         ├─ [-] asset.804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97
+         └─ [+] asset.476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3
+[~] AWS::SQS::Queue JoshQueue JoshQueueEB99F847 
+ ├─ [+] DelaySeconds
+ │   └─ 5
+ ├─ [+] DeletionPolicy
+ │   └─ Delete
+ └─ [+] UpdateReplacePolicy
+     └─ Delete
+
+Outputs
+[~] Output thequeue thequeue: {"Value":{"Fn::GetAtt":["JoshQueueEB99F847","Arn"]}} to {"Value":{"Ref":"JoshTopicA4ECB805"}}
+
+</pre>
+      </div>
+    </div>
+  
+      
+      <ul class="actions">
+        
+    <li class="update">
+      <div class="summary" onclick="accordion(this)">
+        
+    <span class="badge">UPDATE</span>
+  
+        
+    <span class="id">
+      <span class="id-segment type">conditions</span>
+      <span class="id-segment name">CDKMetadataAvailable</span>
+    </span>
+  
+      </div>
+      <div class="changes collapsed">
+        
+        
+    <div class="raw-diff">
+      
+      <div class="changes collapsed">
+          <pre>{
+  "id": "CDKMetadataAvailable",
+  "diff": {
+    "oldValue": {
+      "Fn::Or": [
+        {
+          "Fn::Or": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-east-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-northeast-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-northeast-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-southeast-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-southeast-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ca-central-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "cn-north-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "cn-northwest-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-central-1"
+              ]
+            }
+          ]
+        },
+        {
+          "Fn::Or": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-north-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-west-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-west-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-west-3"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "me-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "sa-east-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-east-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-east-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-west-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-west-2"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "newValue": {
+      "Fn::Or": [
+        {
+          "Fn::Or": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "af-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-east-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-northeast-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-northeast-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-southeast-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-southeast-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ca-central-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "cn-north-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "cn-northwest-1"
+              ]
+            }
+          ]
+        },
+        {
+          "Fn::Or": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-central-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-north-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-west-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-west-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-west-3"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "me-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "sa-east-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-east-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-east-2"
+              ]
+            }
+          ]
+        },
+        {
+          "Fn::Or": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-west-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-west-2"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "isDifferent": true
+  }
+}</pre>
+      </div>
+    </div>
+  
+      </div>
+    </li>
+  
+
+    <li class="update">
+      <div class="summary" onclick="accordion(this)">
+        
+    <span class="badge">UPDATE</span>
+  
+        
+    <span class="id">
+      <span class="id-segment type">outputs</span>
+      <span class="id-segment name">thequeue</span>
+    </span>
+  
+      </div>
+      <div class="changes collapsed">
+        
+        
+    <div class="raw-diff">
+      
+      <div class="changes collapsed">
+          <pre>{
+  "id": "thequeue",
+  "diff": {
+    "oldValue": {
+      "Value": {
+        "Fn::GetAtt": [
+          "JoshQueueEB99F847",
+          "Arn"
+        ]
+      }
+    },
+    "newValue": {
+      "Value": {
+        "Ref": "JoshTopicA4ECB805"
+      }
+    },
+    "isDifferent": true
+  }
+}</pre>
+      </div>
+    </div>
+  
+      </div>
+    </li>
+  
+
+    <li class="addition">
+      <div class="summary" onclick="accordion(this)">
+        
+    <span class="badge">ADDITION</span>
+  
+        
+    <span class="id">
+      <span class="id-segment type">AWS::SQS::Queue</span>
+      <span class="id-segment name">JoshQueue2C9D19A77</span>
+    </span>
+  
+      </div>
+      <div class="changes collapsed">
+        
+        
+    <div class="raw-diff">
+      
+      <div class="changes collapsed">
+          <pre>{
+  "id": "JoshQueue2C9D19A77",
+  "diff": {
+    "newValue": {
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "JoshStack/JoshQueue2/Resource"
+      }
+    },
+    "resourceTypes": {
+      "newType": "AWS::SQS::Queue"
+    },
+    "propertyDiffs": {},
+    "otherDiffs": {},
+    "isAddition": true,
+    "isRemoval": false
+  }
+}</pre>
+      </div>
+    </div>
+  
+      </div>
+    </li>
+  
+
+    <li class="update">
+      <div class="summary" onclick="accordion(this)">
+        
+    <span class="badge">UPDATE</span>
+  
+        
+    <span class="id">
+      <span class="id-segment type">AWS::Lambda::Function</span>
+      <span class="id-segment name">JoshLambdaC8236207</span>
+    </span>
+  
+      </div>
+      <div class="changes collapsed">
+        
+      <div class="changes-breakdown">
+        <div class="no-diff-changes-breakdown">
+          
+        </div>
+        
+    <div>
+      <div class="d2h-wrapper">
+    <div id="d2h-105869" class="d2h-file-wrapper" data-lang="">
+    <div class="d2h-file-header">
+    <span class="d2h-file-name-wrapper">
+    <svg aria-hidden="true" class="d2h-icon" height="16" version="1.1" viewBox="0 0 12 16" width="12">
+        <path d="M6 5H2v-1h4v1zM2 8h7v-1H2v1z m0 2h7v-1H2v1z m0 2h7v-1H2v1z m10-7.5v9.5c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h7.5l3.5 3.5z m-1 0.5L8 2H1v12h10V5z"></path>
+    </svg>    <span class="d2h-file-name">Code</span>
+    <span class="d2h-tag d2h-changed d2h-changed-tag">CHANGED</span></span>
+<label class="d2h-file-collapse">
+    <input class="d2h-file-collapse-input" type="checkbox" name="viewed" value="viewed">
+    Viewed
+</label>
+    </div>
+    <div class="d2h-file-diff">
+        <div class="d2h-code-wrapper">
+            <table class="d2h-diff-table">
+                <tbody class="d2h-diff-tbody">
+                <tr>
+    <td class="d2h-code-linenumber d2h-info"></td>
+    <td class="d2h-info">
+        <div class="d2h-code-line">@@ -1,7 +1,7 @@</div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">1</div>
+<div class="line-num2">1</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">{</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">2</div>
+<div class="line-num2">2</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">  &quot;S3Bucket&quot;: {</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-del d2h-change">
+      <div class="line-num1">3</div>
+<div class="line-num2"></div>
+    </td>
+    <td class="d2h-del d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">-</span>
+            <span class="d2h-code-line-ctn">    &quot;Ref&quot;: &quot;<del>AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3Bucket302ABB09</del>&quot;</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-ins d2h-change">
+      <div class="line-num1"></div>
+<div class="line-num2">3</div>
+    </td>
+    <td class="d2h-ins d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">+</span>
+            <span class="d2h-code-line-ctn">    &quot;Ref&quot;: &quot;<ins>AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3Bucket77CF327B</ins>&quot;</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">4</div>
+<div class="line-num2">4</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">  },</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">5</div>
+<div class="line-num2">5</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">  &quot;S3Key&quot;: {</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">6</div>
+<div class="line-num2">6</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">    &quot;Fn::Join&quot;: [</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">7</div>
+<div class="line-num2">7</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">      &quot;&quot;,</span>
+        </div>
+    </td>
+</tr>
+<tr>
+    <td class="d2h-code-linenumber d2h-info"></td>
+    <td class="d2h-info">
+        <div class="d2h-code-line">@@ -12,9 +12,9 @@</div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">12</div>
+<div class="line-num2">12</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">            {</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">13</div>
+<div class="line-num2">13</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">              &quot;Fn::Split&quot;: [</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">14</div>
+<div class="line-num2">14</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">                &quot;||&quot;,</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">15</div>
+<div class="line-num2">15</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">                {</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-del d2h-change">
+      <div class="line-num1">16</div>
+<div class="line-num2"></div>
+    </td>
+    <td class="d2h-del d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">-</span>
+            <span class="d2h-code-line-ctn">                  &quot;Ref&quot;: &quot;<del>AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3VersionKey4C878B0E</del>&quot;</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-ins d2h-change">
+      <div class="line-num1"></div>
+<div class="line-num2">16</div>
+    </td>
+    <td class="d2h-ins d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">+</span>
+            <span class="d2h-code-line-ctn">                  &quot;Ref&quot;: &quot;<ins>AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3VersionKey0F68B949</ins>&quot;</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">17</div>
+<div class="line-num2">17</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">                }</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">18</div>
+<div class="line-num2">18</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">              ]</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">19</div>
+<div class="line-num2">19</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">            }</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">20</div>
+<div class="line-num2">20</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">          ]</span>
+        </div>
+    </td>
+</tr>
+<tr>
+    <td class="d2h-code-linenumber d2h-info"></td>
+    <td class="d2h-info">
+        <div class="d2h-code-line">@@ -25,9 +25,9 @@</div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">25</div>
+<div class="line-num2">25</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">            {</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">26</div>
+<div class="line-num2">26</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">              &quot;Fn::Split&quot;: [</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">27</div>
+<div class="line-num2">27</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">                &quot;||&quot;,</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">28</div>
+<div class="line-num2">28</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">                {</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-del d2h-change">
+      <div class="line-num1">29</div>
+<div class="line-num2"></div>
+    </td>
+    <td class="d2h-del d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">-</span>
+            <span class="d2h-code-line-ctn">                  &quot;Ref&quot;: &quot;<del>AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3VersionKey4C878B0E</del>&quot;</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-ins d2h-change">
+      <div class="line-num1"></div>
+<div class="line-num2">29</div>
+    </td>
+    <td class="d2h-ins d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">+</span>
+            <span class="d2h-code-line-ctn">                  &quot;Ref&quot;: &quot;<ins>AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3VersionKey0F68B949</ins>&quot;</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">30</div>
+<div class="line-num2">30</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">                }</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">31</div>
+<div class="line-num2">31</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">              ]</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">32</div>
+<div class="line-num2">32</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">            }</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">33</div>
+<div class="line-num2">33</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">          ]</span>
+        </div>
+    </td>
+</tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+    </div>
+  
+    <div>
+      <div class="d2h-wrapper">
+    <div id="d2h-963763" class="d2h-file-wrapper" data-lang="">
+    <div class="d2h-file-header">
+    <span class="d2h-file-name-wrapper">
+    <svg aria-hidden="true" class="d2h-icon" height="16" version="1.1" viewBox="0 0 12 16" width="12">
+        <path d="M6 5H2v-1h4v1zM2 8h7v-1H2v1z m0 2h7v-1H2v1z m0 2h7v-1H2v1z m10-7.5v9.5c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h7.5l3.5 3.5z m-1 0.5L8 2H1v12h10V5z"></path>
+    </svg>    <span class="d2h-file-name">Environment</span>
+    <span class="d2h-tag d2h-changed d2h-changed-tag">CHANGED</span></span>
+<label class="d2h-file-collapse">
+    <input class="d2h-file-collapse-input" type="checkbox" name="viewed" value="viewed">
+    Viewed
+</label>
+    </div>
+    <div class="d2h-file-diff">
+        <div class="d2h-code-wrapper">
+            <table class="d2h-diff-table">
+                <tbody class="d2h-diff-tbody">
+                <tr>
+    <td class="d2h-code-linenumber d2h-info"></td>
+    <td class="d2h-info">
+        <div class="d2h-code-line">@@ -1,5 +1,6 @@</div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">1</div>
+<div class="line-num2">1</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">{</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">2</div>
+<div class="line-num2">2</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">  &quot;Variables&quot;: {</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-del d2h-change">
+      <div class="line-num1">3</div>
+<div class="line-num2"></div>
+    </td>
+    <td class="d2h-del d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">-</span>
+            <span class="d2h-code-line-ctn">    &quot;POOP&quot;: &quot;<del class="d2h-change">FOO</del>&quot;</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-ins d2h-change">
+      <div class="line-num1"></div>
+<div class="line-num2">3</div>
+    </td>
+    <td class="d2h-ins d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">+</span>
+            <span class="d2h-code-line-ctn">    &quot;POOP&quot;: &quot;<ins class="d2h-change">FOO2</ins>&quot;<ins>,</ins></span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-ins">
+      <div class="line-num1"></div>
+<div class="line-num2">4</div>
+    </td>
+    <td class="d2h-ins">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">+</span>
+            <span class="d2h-code-line-ctn">    &quot;BAZ&quot;: &quot;BAR&quot;</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">4</div>
+<div class="line-num2">5</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">  }</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">5</div>
+<div class="line-num2">6</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">}</span>
+        </div>
+    </td>
+</tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+    </div>
+  
+    <div>
+      <div class="d2h-wrapper">
+    <div id="d2h-351368" class="d2h-file-wrapper" data-lang="">
+    <div class="d2h-file-header">
+    <span class="d2h-file-name-wrapper">
+    <svg aria-hidden="true" class="d2h-icon" height="16" version="1.1" viewBox="0 0 12 16" width="12">
+        <path d="M6 5H2v-1h4v1zM2 8h7v-1H2v1z m0 2h7v-1H2v1z m0 2h7v-1H2v1z m10-7.5v9.5c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h7.5l3.5 3.5z m-1 0.5L8 2H1v12h10V5z"></path>
+    </svg>    <span class="d2h-file-name">Runtime</span>
+    <span class="d2h-tag d2h-changed d2h-changed-tag">CHANGED</span></span>
+<label class="d2h-file-collapse">
+    <input class="d2h-file-collapse-input" type="checkbox" name="viewed" value="viewed">
+    Viewed
+</label>
+    </div>
+    <div class="d2h-file-diff">
+        <div class="d2h-code-wrapper">
+            <table class="d2h-diff-table">
+                <tbody class="d2h-diff-tbody">
+                <tr>
+    <td class="d2h-code-linenumber d2h-info"></td>
+    <td class="d2h-info">
+        <div class="d2h-code-line">@@ -1,1 +1,1 @@</div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-del d2h-change">
+      <div class="line-num1">1</div>
+<div class="line-num2"></div>
+    </td>
+    <td class="d2h-del d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">-</span>
+            <span class="d2h-code-line-ctn"><del class="d2h-change">nodejs10</del>.x</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-ins d2h-change">
+      <div class="line-num1"></div>
+<div class="line-num2">1</div>
+    </td>
+    <td class="d2h-ins d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">+</span>
+            <span class="d2h-code-line-ctn"><ins class="d2h-change">nodejs12</ins>.x</span>
+        </div>
+    </td>
+</tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+    </div>
+  
+    <div>
+      <div class="d2h-wrapper">
+    <div id="d2h-360049" class="d2h-file-wrapper" data-lang="">
+    <div class="d2h-file-header">
+    <span class="d2h-file-name-wrapper">
+    <svg aria-hidden="true" class="d2h-icon" height="16" version="1.1" viewBox="0 0 12 16" width="12">
+        <path d="M6 5H2v-1h4v1zM2 8h7v-1H2v1z m0 2h7v-1H2v1z m0 2h7v-1H2v1z m10-7.5v9.5c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h7.5l3.5 3.5z m-1 0.5L8 2H1v12h10V5z"></path>
+    </svg>    <span class="d2h-file-name">Metadata</span>
+    <span class="d2h-tag d2h-changed d2h-changed-tag">CHANGED</span></span>
+<label class="d2h-file-collapse">
+    <input class="d2h-file-collapse-input" type="checkbox" name="viewed" value="viewed">
+    Viewed
+</label>
+    </div>
+    <div class="d2h-file-diff">
+        <div class="d2h-code-wrapper">
+            <table class="d2h-diff-table">
+                <tbody class="d2h-diff-tbody">
+                <tr>
+    <td class="d2h-code-linenumber d2h-info"></td>
+    <td class="d2h-info">
+        <div class="d2h-code-line">@@ -1,5 +1,5 @@</div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">1</div>
+<div class="line-num2">1</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">{</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">2</div>
+<div class="line-num2">2</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">  &quot;aws:cdk:path&quot;: &quot;JoshStack&#x2F;JoshLambda&#x2F;Resource&quot;,</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-del d2h-change">
+      <div class="line-num1">3</div>
+<div class="line-num2"></div>
+    </td>
+    <td class="d2h-del d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">-</span>
+            <span class="d2h-code-line-ctn">  &quot;aws:asset:path&quot;: &quot;asset.<del>804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97</del>&quot;,</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-ins d2h-change">
+      <div class="line-num1"></div>
+<div class="line-num2">3</div>
+    </td>
+    <td class="d2h-ins d2h-change">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">+</span>
+            <span class="d2h-code-line-ctn">  &quot;aws:asset:path&quot;: &quot;asset.<ins>476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3</ins>&quot;,</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">4</div>
+<div class="line-num2">4</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">  &quot;aws:asset:property&quot;: &quot;Code&quot;</span>
+        </div>
+    </td>
+</tr><tr>
+    <td class="d2h-code-linenumber d2h-cntx">
+      <div class="line-num1">5</div>
+<div class="line-num2">5</div>
+    </td>
+    <td class="d2h-cntx">
+        <div class="d2h-code-line">
+            <span class="d2h-code-line-prefix">&nbsp;</span>
+            <span class="d2h-code-line-ctn">}</span>
+        </div>
+    </td>
+</tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+    </div>
+  
+      </table>
+    
+        
+    <div class="raw-diff">
+      <button onclick="accordion(this)">CDK Diff Output</button>
+      <div class="changes ">
+          <pre>{
+  "id": "JoshLambdaC8236207",
+  "diff": {
+    "oldValue": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3Bucket302ABB09"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3VersionKey4C878B0E"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3VersionKey4C878B0E"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "JoshLambdaServiceRoleDEC0C426",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs10.x",
+        "Environment": {
+          "Variables": {
+            "POOP": "FOO"
+          }
+        }
+      },
+      "DependsOn": [
+        "JoshLambdaServiceRoleDEC0C426"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "JoshStack/JoshLambda/Resource",
+        "aws:asset:path": "asset.804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97",
+        "aws:asset:property": "Code"
+      }
+    },
+    "newValue": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3Bucket77CF327B"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3VersionKey0F68B949"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3VersionKey0F68B949"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "JoshLambdaServiceRoleDEC0C426",
+            "Arn"
+          ]
+        },
+        "Environment": {
+          "Variables": {
+            "POOP": "FOO2",
+            "BAZ": "BAR"
+          }
+        },
+        "Handler": "index.handler",
+        "Runtime": "nodejs12.x"
+      },
+      "DependsOn": [
+        "JoshLambdaServiceRoleDEC0C426"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "JoshStack/JoshLambda/Resource",
+        "aws:asset:path": "asset.476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3",
+        "aws:asset:property": "Code"
+      }
+    },
+    "resourceTypes": {
+      "oldType": "AWS::Lambda::Function",
+      "newType": "AWS::Lambda::Function"
+    },
+    "propertyDiffs": {
+      "Code": {
+        "oldValue": {
+          "S3Bucket": {
+            "Ref": "AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3Bucket302ABB09"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3VersionKey4C878B0E"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97S3VersionKey4C878B0E"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "newValue": {
+          "S3Bucket": {
+            "Ref": "AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3Bucket77CF327B"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3VersionKey0F68B949"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3S3VersionKey0F68B949"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "isDifferent": true,
+        "changeImpact": "WILL_UPDATE"
+      },
+      "Handler": {
+        "oldValue": "index.handler",
+        "newValue": "index.handler",
+        "isDifferent": false,
+        "changeImpact": "NO_CHANGE"
+      },
+      "Role": {
+        "oldValue": {
+          "Fn::GetAtt": [
+            "JoshLambdaServiceRoleDEC0C426",
+            "Arn"
+          ]
+        },
+        "newValue": {
+          "Fn::GetAtt": [
+            "JoshLambdaServiceRoleDEC0C426",
+            "Arn"
+          ]
+        },
+        "isDifferent": false,
+        "changeImpact": "NO_CHANGE"
+      },
+      "Runtime": {
+        "oldValue": "nodejs10.x",
+        "newValue": "nodejs12.x",
+        "isDifferent": true,
+        "changeImpact": "WILL_UPDATE"
+      },
+      "Environment": {
+        "oldValue": {
+          "Variables": {
+            "POOP": "FOO"
+          }
+        },
+        "newValue": {
+          "Variables": {
+            "POOP": "FOO2",
+            "BAZ": "BAR"
+          }
+        },
+        "isDifferent": true,
+        "changeImpact": "WILL_UPDATE"
+      }
+    },
+    "otherDiffs": {
+      "Type": {
+        "oldValue": "AWS::Lambda::Function",
+        "newValue": "AWS::Lambda::Function",
+        "isDifferent": false
+      },
+      "DependsOn": {
+        "oldValue": [
+          "JoshLambdaServiceRoleDEC0C426"
+        ],
+        "newValue": [
+          "JoshLambdaServiceRoleDEC0C426"
+        ],
+        "isDifferent": false
+      },
+      "Metadata": {
+        "oldValue": {
+          "aws:cdk:path": "JoshStack/JoshLambda/Resource",
+          "aws:asset:path": "asset.804034ebb823673f97b6ff287df451eb98d6cf368cbf2fe6f877d61a431b2a97",
+          "aws:asset:property": "Code"
+        },
+        "newValue": {
+          "aws:cdk:path": "JoshStack/JoshLambda/Resource",
+          "aws:asset:path": "asset.476c839c35f9d3d72e0e6b896683458e4943fdbeb6bb6a1393f2dda249c90de3",
+          "aws:asset:property": "Code"
+        },
+        "isDifferent": true
+      }
+    },
+    "isAddition": false,
+    "isRemoval": false
+  }
+}</pre>
+      </div>
+    </div>
+  
+      </div>
+    </li>
+  
+
+    <li class="update">
+      <div class="summary" onclick="accordion(this)">
+        
+    <span class="badge">UPDATE</span>
+  
+        
+    <span class="id">
+      <span class="id-segment type">AWS::SQS::Queue</span>
+      <span class="id-segment name">JoshQueueEB99F847</span>
+    </span>
+  
+      </div>
+      <div class="changes collapsed">
+        
+      <div class="changes-breakdown">
+        <div class="no-diff-changes-breakdown">
+          
+            <table>
+              
+    <tr>
+      <td class="property">
+        DelaySeconds
+        <br /><span class="forces-new-resource">(ADDITION)</span>
+      </td>
+      <td class="new-value">5</td>
+    </tr>
+  
+    <tr>
+      <td class="property">
+        DeletionPolicy
+        <br /><span class="forces-new-resource">(ADDITION)</span>
+      </td>
+      <td class="new-value">Delete</td>
+    </tr>
+  
+    <tr>
+      <td class="property">
+        UpdateReplacePolicy
+        <br /><span class="forces-new-resource">(ADDITION)</span>
+      </td>
+      <td class="new-value">Delete</td>
+    </tr>
+  
+            </table>
+          
+        </div>
+        
+      </table>
+    
+        
+    <div class="raw-diff">
+      <button onclick="accordion(this)">CDK Diff Output</button>
+      <div class="changes ">
+          <pre>{
+  "id": "JoshQueueEB99F847",
+  "diff": {
+    "oldValue": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "aws:cdk:path": "JoshStack/JoshQueue/Resource"
+      }
+    },
+    "newValue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "DelaySeconds": 5
+      },
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "JoshStack/JoshQueue/Resource"
+      }
+    },
+    "resourceTypes": {
+      "oldType": "AWS::SQS::Queue",
+      "newType": "AWS::SQS::Queue"
+    },
+    "propertyDiffs": {
+      "DelaySeconds": {
+        "newValue": 5,
+        "isDifferent": true,
+        "changeImpact": "WILL_UPDATE"
+      }
+    },
+    "otherDiffs": {
+      "Type": {
+        "oldValue": "AWS::SQS::Queue",
+        "newValue": "AWS::SQS::Queue",
+        "isDifferent": false
+      },
+      "Metadata": {
+        "oldValue": {
+          "aws:cdk:path": "JoshStack/JoshQueue/Resource"
+        },
+        "newValue": {
+          "aws:cdk:path": "JoshStack/JoshQueue/Resource"
+        },
+        "isDifferent": false
+      },
+      "UpdateReplacePolicy": {
+        "newValue": "Delete",
+        "isDifferent": true
+      },
+      "DeletionPolicy": {
+        "newValue": "Delete",
+        "isDifferent": true
+      }
+    },
+    "isAddition": false,
+    "isRemoval": false
+  }
+}</pre>
+      </div>
+    </div>
+  
+      </div>
+    </li>
+  
+      </ul>
+    </div>
+  </div>
+        <ul id="actions" class="actions"></ul>
+        <pre id="diff"></pre>
+      </div>
+    </div>
+    <script>
+      function accordion(element) {
+        const changes = element.parentElement.getElementsByClassName('changes');
+        for (var i = 0; i < changes.length; i++) {
+          toggleClass(changes[i], 'collapsed');
+        }
+      }
+
+      function toggleClass(element, className) {
+        if (!element.className.match(className)) {
+          element.className += ' ' + className;
+        } else {
+          element.className = element.className.replace(className, '');
+        }
+      }
+
+      function addClass(element, className) {
+        if (!element.className.match(className)) element.className += ' ' + className;
+      }
+
+      function removeClass(element, className) {
+        element.className = element.className.replace(className, '');
+      }
+
+      function expandAll() {
+        const sections = document.querySelectorAll('.changes.collapsed');
+
+        for (var i = 0; i < sections.length; i++) {
+          toggleClass(sections[i], 'collapsed');
+        }
+
+        toggleClass(document.querySelector('.expand-all'), 'hidden');
+        toggleClass(document.querySelector('.collapse-all'), 'hidden');
+      }
+
+      function collapseAll() {
+        const sections = document.querySelectorAll('.changes:not(.collapsed)');
+
+        for (var i = 0; i < sections.length; i++) {
+          toggleClass(sections[i], 'collapsed');
+        }
+
+        toggleClass(document.querySelector('.expand-all'), 'hidden');
+        toggleClass(document.querySelector('.collapse-all'), 'hidden');
+      }
+
+      function removeChildren(element) {
+        while (element.lastChild) {
+          element.removeChild(element.lastChild);
+        }
+      }
+
+      function createModalContainer() {
+        const modalElement = document.createElement('div');
+        modalElement.id = 'modal-container';
+
+        document.body.appendChild(modalElement);
+
+        return modalElement;
+      }
+
+      function closeModal() {
+        const modalElement = document.getElementById('modal-container');
+        document.body.removeChild(modalElement);
+      }
+    </script>
+  </body>
+</html>

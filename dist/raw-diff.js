@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRawDiff = void 0;
+const cdk_reverse_engineered_1 = require("./cdk-reverse-engineered");
+exports.getRawDiff = async () => {
+    const cdkToolkit = await cdk_reverse_engineered_1.bootstrapCdkToolkit();
+    return cdkToolkit.getDiffObject({
+        stackNames: [],
+    });
+};
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicmF3LWRpZmYuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi9zcmMvcmF3LWRpZmYudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7O0FBQ0EscUVBQStEO0FBRWxELFFBQUEsVUFBVSxHQUFHLEtBQUssSUFBNkIsRUFBRTtJQUM1RCxNQUFNLFVBQVUsR0FBRyxNQUFNLDRDQUFtQixFQUFFLENBQUM7SUFDL0MsT0FBTyxVQUFVLENBQUMsYUFBYSxDQUFDO1FBQzlCLFVBQVUsRUFBRSxFQUFFO0tBQ2YsQ0FBQyxDQUFDO0FBQ0wsQ0FBQyxDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgU3RhY2tSYXdEaWZmIH0gZnJvbSAnLi90eXBlcyc7XG5pbXBvcnQgeyBib290c3RyYXBDZGtUb29sa2l0IH0gZnJvbSAnLi9jZGstcmV2ZXJzZS1lbmdpbmVlcmVkJztcblxuZXhwb3J0IGNvbnN0IGdldFJhd0RpZmYgPSBhc3luYyAoKTogUHJvbWlzZTxTdGFja1Jhd0RpZmZbXT4gPT4ge1xuICBjb25zdCBjZGtUb29sa2l0ID0gYXdhaXQgYm9vdHN0cmFwQ2RrVG9vbGtpdCgpO1xuICByZXR1cm4gY2RrVG9vbGtpdC5nZXREaWZmT2JqZWN0KHtcbiAgICBzdGFja05hbWVzOiBbXSxcbiAgfSk7XG59O1xuIl19

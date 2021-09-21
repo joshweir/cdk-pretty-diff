@@ -9,7 +9,7 @@ export declare type StackRawDiff = {
 };
 export declare type NicerDiffChange = {
     label: string;
-    from: any;
+    from?: any;
     to: any;
     action: 'ADDITION' | 'UPDATE' | 'REMOVAL';
 };

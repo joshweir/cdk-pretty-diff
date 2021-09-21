@@ -1,4 +1,4 @@
-import { NicerStackDiff } from './types';
-export * from './types';
+export * from './raw-diff';
+export * from './custom-diff';
 export * from './render';
-export declare const getCustomDiff: () => Promise<NicerStackDiff[]>;
+export * from './types';
