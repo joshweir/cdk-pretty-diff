@@ -1,6 +1,4 @@
 {
   "@aws-cdk/core:enableStackNameDuplicates": "true",
-  "aws-cdk:enableDiffNoFail": "true",
-  "assume-role-credentials:writeIamRoleName": "EC2DescribeV2CrossAccountRole",
-  "assume-role-credentials:readIamRoleName": "EC2DescribeV2CrossAccountRole"
+  "aws-cdk:enableDiffNoFail": "true"
 }
