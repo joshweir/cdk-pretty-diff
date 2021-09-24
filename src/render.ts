@@ -1,9 +1,8 @@
-import { resolve } from "path";
-import { readFileSync } from "fs";
 import { createTwoFilesPatch } from 'diff';
 import * as diff2html from 'diff2html';
 
 import { NicerDiff, NicerDiffChange, NicerStackDiff } from "./types";
+import htmlTemplate from './pretty-diff-template.html';
 
 const prettify = (valueIn: any): string => {
   const value =
@@ -174,9 +173,7 @@ export const renderCustomDiffToHtmlString = (
   diffs: NicerStackDiff[],
   title: string
 ): string => {
-  let html = readFileSync(
-    resolve(__dirname, "./pretty-diff-template.html")
-  ).toString();
+  let html = htmlTemplate;
   html = html
     .replace(`<h1>prettyplan</h1>`, `<h1>${title}</h1>`)
     .replace(`<title>prettyplan</title>`, `<title>${title}</title>`);
