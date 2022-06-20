@@ -94,12 +94,14 @@ const buildLogicalToPathMap = (stack: cxapi.CloudFormationStackArtifact): Record
 
 class CustomCdkToolkit extends CdkToolkit {
   constructor(props: CdkToolkitProps) {
+    console.debug('initializing CustomCdkToolkit super class');
     super(props);
   }
 
   // method is reverse engineered based on CdkTookit.diff method but returns a diff structure 
   // where diff outputs formatted diff to a stream (ie. stderr)
   async getDiffObject(options: DiffOptions): Promise<StackRawDiff[]> {
+    console.debug('selectStacksForDiff');
     const stacks = await (this as any).selectStacksForDiff(options.stackNames, options.exclusively);
     let diffs: StackRawDiff[] = [];
     if (options.templatePath !== undefined) {
@@ -108,7 +110,9 @@ class CustomCdkToolkit extends CdkToolkit {
 
     // Compare N stacks against deployed templates
     for (const stack of stacks.stackArtifacts) {
+      console.debug(`readCurrentTemplate for stack: ${stack.displayName}`);
       const currentTemplate = await (((this as any).props as CdkToolkitProps).cloudFormation.readCurrentTemplate(stack));
+      console.debug('cloudformation diff the stack')
       diffs.push({
         stackName: stack.displayName,
         rawDiff: filterCDKMetadata(cfnDiff.diffTemplate(currentTemplate, stack.template)),
@@ -122,6 +126,7 @@ class CustomCdkToolkit extends CdkToolkit {
 
 // reverse engineered from node_modules/aws-cdk/bin/cdk.js
 export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
+  console.debug('loading configuration');
   const configuration = new Configuration(
     // { 
     //   _: ['diff' as any],
@@ -129,17 +134,20 @@ export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
     // }
   );
   await configuration.load();
+  console.debug('loading sdk provider');
   const sdkProvider = await SdkProvider.withAwsCliCompatibleDefaults({
       // profile: configuration.settings.get(['profile']),
   });
+  console.debug('initializing CloudFormationDeployments');
   const cloudFormation = new CloudFormationDeployments({ sdkProvider });
+  console.debug('initializing CloudExecutable');
   const cloudExecutable = new CloudExecutable({
       configuration,
       sdkProvider,
       synthesizer: execProgram,
   });
   colors.disable();
-
+  console.debug('loading plugins');
   function loadPlugins(...settings: any[]) {
     const loaded = new Set();
     for (const source of settings) {
@@ -165,6 +173,7 @@ export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
   }
   loadPlugins(configuration.settings);
 
+  console.debug('initializing CustomCdkToolkit');
   return new CustomCdkToolkit({
     cloudExecutable,
     cloudFormation,
