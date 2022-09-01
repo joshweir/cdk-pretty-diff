@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "chalk": "4.1.2",
+    "colors": "1.4.0",
     "diff": "^5.0.0",
     "diff2html": "^3.4.7",
     "promptly": "3.2.0",
