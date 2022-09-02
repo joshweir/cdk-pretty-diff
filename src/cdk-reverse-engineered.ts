@@ -11,25 +11,10 @@ import { SdkProvider } from 'aws-cdk/lib/api/aws-auth';
 import { CloudFormationDeployments } from 'aws-cdk/lib/api/cloudformation-deployments';
 import { CloudExecutable } from 'aws-cdk/lib/api/cxapp/cloud-executable';
 import { execProgram } from 'aws-cdk/lib/api/cxapp/exec';
+import { PluginHost } from 'aws-cdk/lib/plugin';
 import * as colors from 'colors/safe';
 
 import { StackRawDiff } from './types';
-
-const getPluginHost = async () => {
-  try {
-    // cdk 1 path
-    console.log('Loading PluginHost from cdk1 path: aws-cdk/lib/plugin');
-    const { PluginHost } = await import('aws-cdk/lib/plugin');
-    return PluginHost;
-  } catch (err) {
-    // cdk 2 path
-    console.log('Unable to find PluginHost in cdk1 path');
-    console.log('Loading PluginHost from cdk2 path: aws-cdk/lib/api/plugin');
-    // @ts-ignore
-    const { PluginHost } = await import('aws-cdk/lib/api/plugin');
-    return PluginHost;
-  }
-};
 
 // reverse engineered from:
 // aws-cdk/lib/diff (printStackDiff)
@@ -190,8 +175,6 @@ export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
   });
   colors.disable();
   console.debug('loading plugins');
-
-  const PluginHost = await getPluginHost();
 
   function loadPlugins(...settings: any[]) {
     const loaded = new Set();
