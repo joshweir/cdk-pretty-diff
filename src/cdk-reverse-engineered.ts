@@ -11,7 +11,7 @@ import { SdkProvider } from 'aws-cdk/lib/api/aws-auth';
 import { CloudFormationDeployments } from 'aws-cdk/lib/api/cloudformation-deployments';
 import { CloudExecutable } from 'aws-cdk/lib/api/cxapp/cloud-executable';
 import { execProgram } from 'aws-cdk/lib/api/cxapp/exec';
-import { PluginHost } from 'aws-cdk/lib/plugin';
+import { PluginHost } from 'aws-cdk/lib/api/plugin';
 import * as colors from 'colors/safe';
 
 import { StackRawDiff } from './types';

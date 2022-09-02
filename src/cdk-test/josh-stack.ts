@@ -1,48 +1,48 @@
 import * as path from "path";
 
-import * as cdk from "@aws-cdk/core";
-import * as lambda from "@aws-cdk/aws-lambda";
-import * as dynamodb from "@aws-cdk/aws-dynamodb";
-import * as sns from '@aws-cdk/aws-sns';
-import * as iam from "@aws-cdk/aws-iam";
-import * as sqs from '@aws-cdk/aws-sqs';
-import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
+import { Stack, StackProps, App, Duration, CfnOutput } from "aws-cdk-lib";
+import { Runtime, Function, AssetCode } from "aws-cdk-lib/aws-lambda";
+import { AttributeType, BillingMode, Table } from "aws-cdk-lib/aws-dynamodb";
+import { Topic } from "aws-cdk-lib/aws-sns";
+import { Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { Queue } from "aws-cdk-lib/aws-sqs";
+import { SqsSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
 
 const TABLE_NAME = "josh-poop3";
 const PARTITION_KEY = "id";
 
-export class JoshStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+export class JoshStack extends Stack {
+  constructor(scope: App, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const table = new dynamodb.Table(this, TABLE_NAME, {
+    const table = new Table(this, TABLE_NAME, {
       partitionKey: {
         name: PARTITION_KEY,
-        type: dynamodb.AttributeType.STRING,
+        type: AttributeType.STRING,
       },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      billingMode: BillingMode.PAY_PER_REQUEST,
     });
 
-    const role = new iam.Role(this, 'MyRole', {
-      assumedBy: new iam.ServicePrincipal('sns.amazonaws.com'),
+    const role = new Role(this, 'MyRole', {
+      assumedBy: new ServicePrincipal('sns.amazonaws.com'),
     });
 
-    new lambda.Function(this, 'JoshLambda', {
-      runtime: lambda.Runtime.NODEJS_12_X,
+    new Function(this, 'JoshLambda', {
+      runtime: Runtime.NODEJS_12_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, './lambda')),
+      code: new AssetCode(path.join(__dirname, './lambda')),
       environment: {
         'POOP': 'FOO2',
         'BAZ': 'BAR',
       }
     })
 
-    const myTopic = new sns.Topic(this, 'JoshTopic');
-    const myQueue = new sqs.Queue(this, 'JoshQueue', { deliveryDelay: cdk.Duration.seconds(5) });
-    myTopic.addSubscription(new subscriptions.SqsSubscription(myQueue));
+    const myTopic = new Topic(this, 'JoshTopic');
+    const myQueue = new Queue(this, 'JoshQueue', { deliveryDelay: Duration.seconds(5) });
+    myTopic.addSubscription(new SqsSubscription(myQueue));
 
-    new sqs.Queue(this, 'JoshQueue2');
+    new Queue(this, 'JoshQueue2');
 
-    new cdk.CfnOutput(this, 'thequeue', { value: myTopic.topicArn });
+    new CfnOutput(this, 'thequeue', { value: myTopic.topicArn });
   }
 }

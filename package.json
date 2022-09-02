@@ -3,7 +3,7 @@
   "description": "Formatting tool for CDK Diff output. Inspired by Terraform prettyplan (https://github.com/chrislewisdev/prettyplan)",
   "author": "joshweir",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/joshweir/cdk-pretty-diff.git"
@@ -24,25 +24,19 @@
     "cdk": "cdk"
   },
   "devDependencies": {
-    "@aws-cdk/assert": ">= 1.27.0 < 2.0.0",
-    "@aws-cdk/aws-apigateway": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/aws-apigatewayv2": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/aws-apigatewayv2-integrations": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/aws-certificatemanager": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/aws-cloudformation": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/aws-dynamodb": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/aws-lambda": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/aws-sns-subscriptions": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/core": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/cx-api": ">= 1.74.0 < 2.0.0",
+    "@aws-cdk/cloudformation-diff": ">= 2.0.0",
+    "@aws-cdk/aws-apigatewayv2-alpha": "2.39.0-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "2.39.0-alpha.0",
+    "constructs": "^10.0.0",
+    "@aws-cdk/cx-api": ">= 2.0.0",
     "@types/diff": "^5.0.1",
     "@types/hogan.js": "^3.0.1",
     "@types/jest": "^24.0.22",
     "@types/node": "10.17.5",
     "@types/through2": "^2.0.36",
-    "aws-cdk": ">= 1.74.0 < 2.0.0",
+    "aws-cdk": ">= 2.0.0",
+    "aws-cdk-lib": ">= 2.0.0",
     "aws-sdk": "^2.796.0",
-    "cdk-assume-role-credential-plugin": "1.2.3",
     "jest": "^24.0.0",
     "lodash": "^4.17.21",
     "source-map-support": "^0.5.19",
@@ -66,10 +60,10 @@
     "yaml": "1.10.2"
   },
   "peerDependencies": {
-    "@aws-cdk/cloudformation-diff": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/core": ">= 1.74.0 < 2.0.0",
-    "@aws-cdk/cx-api": ">= 1.74.0 < 2.0.0",
-    "aws-cdk": ">= 1.74.0 < 2.0.0"
+    "@aws-cdk/cloudformation-diff": ">= 2.0.0",
+    "@aws-cdk/cx-api": ">= 2.0.0",
+    "aws-cdk": ">= 2.0.0",
+    "aws-cdk-lib": ">= 2.0.0"
   },
   "bugs": {
     "url": "https://github.com/joshweir/cdk-pretty-diff/issues"

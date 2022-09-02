@@ -4,6 +4,14 @@ Format `cdk diff` output to html making review easier. Inspired by [Terraform pr
 
 ## Installation
 
+If you are using `aws-cdk` <= v1:
+
+```
+npm install cdk-pretty-diff@1.x
+```
+
+or `aws-cdk` >= v2:
+
 ```
 npm install cdk-pretty-diff
 ```

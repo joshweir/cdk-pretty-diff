@@ -1,4 +1,4 @@
-import * as cdk from "@aws-cdk/core";
-export declare class JoshStack extends cdk.Stack {
-    constructor(scope: cdk.App, id: string, props?: cdk.StackProps);
+import { Stack, StackProps, App } from "aws-cdk-lib";
+export declare class JoshStack extends Stack {
+    constructor(scope: App, id: string, props?: StackProps);
 }
