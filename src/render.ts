@@ -5,8 +5,10 @@ import { NicerDiff, NicerDiffChange, NicerStackDiff } from "./types";
 import htmlTemplate from './pretty-diff-template.html';
 
 const prettify = (valueIn: any): string => {
+  // fallback to empty string (eg. JSON.stringify of undefined is undefined)
   const value =
-    typeof valueIn === "string" ? valueIn : JSON.stringify(valueIn, null, 2);
+    (typeof valueIn === "string" ? valueIn : JSON.stringify(valueIn, null, 2)) || '';
+
   if (value === "<computed>") {
     return `<em>&lt;computed&gt;</em>`;
   }
