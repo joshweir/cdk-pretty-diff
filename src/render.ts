@@ -171,6 +171,9 @@ const components = {
   `,
 };
 
+export const renderCustomDiffToHtmlNodeString = (diffs: NicerStackDiff[]): string =>
+  diffs.map(components.stackDiff).join(' ');
+
 export const renderCustomDiffToHtmlString = (
   diffs: NicerStackDiff[],
   title: string
@@ -180,10 +183,9 @@ export const renderCustomDiffToHtmlString = (
     .replace(`<h1>prettyplan</h1>`, `<h1>${title}</h1>`)
     .replace(`<title>prettyplan</title>`, `<title>${title}</title>`);
 
-  const stacksHtml = diffs.map(components.stackDiff).join(' ');
   html = html.replace(
     `<div id="stacks"></div>`,
-    `<div id="stacks">${stacksHtml}</div>`
+    `<div id="stacks">${renderCustomDiffToHtmlNodeString(diffs)}</div>`
   );
 
   return html;
