@@ -171,7 +171,14 @@ export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
   const cloudExecutable = new CloudExecutable({
     configuration,
     sdkProvider,
-    synthesizer: execProgram,
+    // execProgram return type changed in aws-cdk v2.61.0, 
+    // therefore check if execProgram returned
+    // object contains `assembly` prop, if so then return it
+    synthesizer: async (...args: Parameters<typeof execProgram>) => {
+      const execProgramResult = await execProgram(...args);
+      
+      return (execProgramResult as any).assembly || execProgramResult;
+    },
   });
   colors.disable();
   console.debug('loading plugins');

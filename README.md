@@ -52,4 +52,8 @@ writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
 ```
 npm i
 npm run build
+
+# run cdk pretty diff for the example stack:
+AWS_PROFILE=<yourawscredentials> npx ts-node bin/diff-to-html.ts
+# pretty diff location: cdk.out/diff.html
 ```

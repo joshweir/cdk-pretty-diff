@@ -3,7 +3,7 @@
   "description": "Formatting tool for CDK Diff output. Inspired by Terraform prettyplan (https://github.com/chrislewisdev/prettyplan)",
   "author": "joshweir",
   "license": "MIT",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/joshweir/cdk-pretty-diff.git"
@@ -25,8 +25,10 @@
   },
   "devDependencies": {
     "@aws-cdk/cloudformation-diff": ">= 2.0.0",
-    "@aws-cdk/aws-apigatewayv2-alpha": "2.39.0-alpha.0",
-    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "2.39.0-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-alpha": "2.61.0-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "2.61.0-alpha.0",
+    "@aws-cdk/region-info": ">= 2.0.0",
+    "cdk-assets": ">= 2.0.0",
     "constructs": "^10.0.0",
     "@aws-cdk/cx-api": ">= 2.0.0",
     "@types/diff": "^5.0.1",
@@ -42,7 +44,7 @@
     "source-map-support": "^0.5.19",
     "ts-jest": "^24.1.0",
     "ts-node": "^8.6.2",
-    "typescript": "^3.8.3",
+    "typescript": "^4.9.3",
     "uuid": "^7.0.2"
   },
   "dependencies": {
