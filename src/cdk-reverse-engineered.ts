@@ -171,7 +171,7 @@ export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
   const cloudExecutable = new CloudExecutable({
     configuration,
     sdkProvider,
-    synthesizer: execProgram,
+    synthesizer: async (aws: SdkProvider, config: Configuration) => (await execProgram(aws, config)).assembly,
   });
   colors.disable();
   console.debug('loading plugins');
