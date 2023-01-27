@@ -1,19 +1,19 @@
 import * as cfnDiff from '@aws-cdk/cloudformation-diff';
 export declare const cdkDiffCategories: readonly ["iamChanges", "securityGroup", "resources", "parameters", "metadata", "mappings", "conditions", "outputs", "unknown"];
-export declare type CdkDiffCategories = typeof cdkDiffCategories;
-export declare type CdkDiffCategory = CdkDiffCategories[number];
-export declare type StackRawDiff = {
+export type CdkDiffCategories = typeof cdkDiffCategories;
+export type CdkDiffCategory = CdkDiffCategories[number];
+export type StackRawDiff = {
     stackName: string;
     rawDiff: cfnDiff.TemplateDiff;
     logicalToPathMap: Record<string, string>;
 };
-export declare type NicerDiffChange = {
+export type NicerDiffChange = {
     label: string;
     from?: any;
     to: any;
     action: 'ADDITION' | 'UPDATE' | 'REMOVAL';
 };
-export declare type NicerDiff = {
+export type NicerDiff = {
     label: string;
     cdkDiffRaw: string;
     nicerDiff?: {
@@ -25,7 +25,7 @@ export declare type NicerDiff = {
     };
 };
 export declare const nicerDiffGuard: (thing: any) => thing is NicerDiff;
-export declare type NicerStackDiff = {
+export type NicerStackDiff = {
     diff?: NicerDiff[];
     raw: string;
     stackName: string;
