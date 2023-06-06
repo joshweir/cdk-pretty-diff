@@ -3,18 +3,16 @@ import * as cxapi from '@aws-cdk/cx-api';
 import * as cxschema from '@aws-cdk/cloud-assembly-schema';
 import {
   CdkToolkit,
-  CdkToolkitProps,
   DiffOptions,
 } from 'aws-cdk/lib/cdk-toolkit';
 import { Configuration } from 'aws-cdk/lib/settings';
 import { SdkProvider } from 'aws-cdk/lib/api/aws-auth';
-import { CloudFormationDeployments } from 'aws-cdk/lib/api/cloudformation-deployments';
 import { CloudExecutable } from 'aws-cdk/lib/api/cxapp/cloud-executable';
 import { execProgram } from 'aws-cdk/lib/api/cxapp/exec';
 import { PluginHost } from 'aws-cdk/lib/api/plugin';
 import * as colors from 'colors/safe';
 
-import { StackRawDiff } from './types';
+import { CdkToolkitDeploymentsProp, CustomCdkToolkitProps, StackRawDiff } from './types';
 
 // reverse engineered from:
 // aws-cdk/lib/diff (printStackDiff)
@@ -114,9 +112,11 @@ const buildLogicalToPathMap = (
 };
 
 class CustomCdkToolkit extends CdkToolkit {
-  constructor(props: CdkToolkitProps) {
+  private cdkToolkitDeploymentsProp: CustomCdkToolkitProps['cdkToolkitDeploymentsProp'];
+  constructor({ cdkToolkitDeploymentsProp, ...props }: CustomCdkToolkitProps) {
     console.debug('initializing CustomCdkToolkit super class');
     super(props);
+    this.cdkToolkitDeploymentsProp = cdkToolkitDeploymentsProp;
   }
 
   // method is reverse engineered based on CdkTookit.diff method but returns a diff structure
@@ -135,9 +135,12 @@ class CustomCdkToolkit extends CdkToolkit {
     // Compare N stacks against deployed templates
     for (const stack of stacks.stackArtifacts) {
       console.debug(`readCurrentTemplate for stack: ${stack.displayName}`);
+      // this is poop, but can't see another way? 
+      // * Property 'props' is private and only accessible within class 'CdkToolkit'
+      // * recent version of aws-cdk (~2.82.0) has changed CdkToolkitProps['cloudFormation'] -> CdkToolkitProps['deployments']
       const currentTemplate = await (
-        (this as any).props as CdkToolkitProps
-      ).cloudFormation.readCurrentTemplate(stack);
+        (this as any).props
+      )[this.cdkToolkitDeploymentsProp].readCurrentTemplate(stack);
       console.debug('cloudformation diff the stack');
       diffs.push({
         stackName: stack.displayName,
@@ -149,6 +152,25 @@ class CustomCdkToolkit extends CdkToolkit {
     }
 
     return diffs;
+  }
+}
+
+const dynamicallyInstantiateDeployments = (sdkProvider: SdkProvider) => {
+  let Deployments;
+  let cdkToolkitDeploymentsProp: CdkToolkitDeploymentsProp = 'deployments';
+
+  try {
+    Deployments = require('aws-cdk/lib/api/deployments').Deployments;
+  } catch(err) {
+    Deployments = require('aws-cdk/lib/api/cloudformation-deployments').CloudFormationDeployments;
+    cdkToolkitDeploymentsProp = 'cloudFormation';
+  }
+
+  const deployments = new Deployments({ sdkProvider });
+
+  return {
+    deployments,
+    cdkToolkitDeploymentsProp,
   }
 }
 
@@ -165,8 +187,6 @@ export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
   const sdkProvider = await SdkProvider.withAwsCliCompatibleDefaults({
     // profile: configuration.settings.get(['profile']),
   });
-  console.debug('initializing CloudFormationDeployments');
-  const cloudFormation = new CloudFormationDeployments({ sdkProvider });
   console.debug('initializing CloudExecutable');
   const cloudExecutable = new CloudExecutable({
     configuration,
@@ -210,13 +230,15 @@ export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
   loadPlugins(configuration.settings);
 
   console.debug('initializing CustomCdkToolkit');
+  const { deployments, cdkToolkitDeploymentsProp } = dynamicallyInstantiateDeployments(sdkProvider);
   return new CustomCdkToolkit({
     cloudExecutable,
-    cloudFormation,
     configuration,
     sdkProvider,
+    cdkToolkitDeploymentsProp,
+    [cdkToolkitDeploymentsProp]: deployments,
     verbose: false,
     ignoreErrors: false,
     strict: true,
-  });
+  } as any);
 };
