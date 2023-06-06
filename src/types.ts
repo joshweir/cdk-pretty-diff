@@ -1,4 +1,5 @@
 import * as cfnDiff from '@aws-cdk/cloudformation-diff';
+import { CdkToolkitProps } from 'aws-cdk/lib/cdk-toolkit';
 
 export const cdkDiffCategories = ['iamChanges', 'securityGroup', 'resources', 'parameters', 'metadata', 'mappings', 'conditions', 'outputs', 'unknown'] as const;
 export type CdkDiffCategories = typeof cdkDiffCategories;
@@ -85,4 +86,11 @@ export const diffValidator = (thing: any): { diffCollectionKey: CdkDiffCategory;
 
   throw new Error(`invalid diff: ${JSON.stringify(thing, null, 2)}`);
 }
-  
+
+export type CdkToolkitDeploymentsProp = 'cloudFormation' | 'deployments';
+
+export type CustomCdkToolkitExtraProps = {
+  cdkToolkitDeploymentsProp: CdkToolkitDeploymentsProp;
+}
+
+export type CustomCdkToolkitProps = CdkToolkitProps & CustomCdkToolkitExtraProps
