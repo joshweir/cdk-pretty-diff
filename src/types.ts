@@ -1,13 +1,13 @@
 import * as cfnDiff from '@aws-cdk/cloudformation-diff';
 import { CdkToolkitProps } from 'aws-cdk/lib/cdk-toolkit';
 
-export const cdkDiffCategories = ['iamChanges', 'securityGroup', 'resources', 'parameters', 'metadata', 'mappings', 'conditions', 'outputs', 'unknown'] as const;
+export const cdkDiffCategories = ['iamChanges', 'securityGroup', 'resources', 'parameters', 'metadata', 'mappings', 'conditions', 'outputs', 'unknown', 'description'] as const;
 export type CdkDiffCategories = typeof cdkDiffCategories;
 export type CdkDiffCategory = CdkDiffCategories[number];
-export type StackRawDiff = { 
-  stackName: string; 
-  rawDiff: cfnDiff.TemplateDiff, 
-  logicalToPathMap: Record<string, string> 
+export type StackRawDiff = {
+  stackName: string;
+  rawDiff: cfnDiff.TemplateDiff,
+  logicalToPathMap: Record<string, string>
 };
 
 export type NicerDiffChange = {
@@ -69,23 +69,26 @@ export const guardResourceDiff = (thing: any): thing is cfnDiff.ResourceDifferen
   typeof thing === 'object' &&
   typeof thing.forEachDifference === 'function';
 
-
-export const diffValidator = (thing: any): { diffCollectionKey: CdkDiffCategory; diffCollection: cfnDiff.DifferenceCollection<any, cfnDiff.Difference<any>> } => {
+export const diffValidator = (thing: any): { diffCollectionKey: CdkDiffCategory; diffCollection: cfnDiff.DifferenceCollection<any, cfnDiff.Difference<any>> } | { diffKey: CdkDiffCategory; diff: cfnDiff.Difference<any> } => {
   if (typeof thing === 'object') {
     if (thing.length === 2) {
-      const [diffCollectionKey, diffCollection] = thing;
-      if (!cdkDiffCategories.includes(diffCollectionKey)) {
-        throw new Error(`unexpected diff category: ${diffCollectionKey}`);
+      const [diffKey, diff] = thing;
+
+      if (!cdkDiffCategories.includes(diffKey)) {
+        throw new Error(`unexpected diff category: ${diffKey}`);
       }
 
-      if (typeof diffCollection === 'object' && diffCollection.hasOwnProperty('diffs')) {
-        return { diffCollectionKey, diffCollection };
+      if (diffKey === 'description') {
+        return { diffKey, diff };
+      } else if (typeof diff === 'object' && diff.hasOwnProperty('diffs')) {
+        return { diffCollectionKey: diffKey, diffCollection: diff };
       }
     }
   }
 
   throw new Error(`invalid diff: ${JSON.stringify(thing, null, 2)}`);
 }
+
 
 export type CdkToolkitDeploymentsProp = 'cloudFormation' | 'deployments';
 
