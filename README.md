@@ -47,6 +47,29 @@ const html = renderCustomDiffToHtmlString(nicerDiffs, 'CDK Diff');
 writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
 ```
 
+optionally, you would provide command line input args (as you could with `cdk diff`` cli):
+
+``` typescript
+import { resolve } from 'path';
+import { writeFileSync } from 'fs';
+import { Command, ConfigurationProps } from 'aws-cdk/lib/settings';
+import { getCustomDiff, renderCustomDiffToHtmlString } from 'cdk-pretty-diff';
+
+const configProps: ConfigurationProps = {
+  commandLineArguments: {
+    _: [Command.DIFF],
+    context: [
+      'foo=bar',
+      'hello=world',
+    ],
+  }
+}
+const nicerDiffs = await getCustomDiff({ configProps });
+const html = renderCustomDiffToHtmlString(nicerDiffs, 'CDK Diff');
+writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
+```
+example: [bin/diff-to-html-with-cli-args.ts](https://github.com/joshweir/cdk-pretty-diff/blob/master/bin/diff-to-html-with-cli-args.ts)
+
 ## Development
 
 ```
