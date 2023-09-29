@@ -47,7 +47,7 @@ const html = renderCustomDiffToHtmlString(nicerDiffs, 'CDK Diff');
 writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
 ```
 
-optionally, you would provide command line input args (as you could with `cdk diff`` cli):
+optionally, provide command line input args (as you could with `cdk diff` command):
 
 ``` typescript
 import { resolve } from 'path';
