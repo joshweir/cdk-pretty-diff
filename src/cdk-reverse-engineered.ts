@@ -5,7 +5,7 @@ import {
   CdkToolkit,
   DiffOptions,
 } from 'aws-cdk/lib/cdk-toolkit';
-import { Configuration } from 'aws-cdk/lib/settings';
+import { Configuration, ConfigurationProps } from 'aws-cdk/lib/settings';
 import { SdkProvider } from 'aws-cdk/lib/api/aws-auth';
 import { CloudExecutable } from 'aws-cdk/lib/api/cxapp/cloud-executable';
 import { execProgram } from 'aws-cdk/lib/api/cxapp/exec';
@@ -175,9 +175,9 @@ const dynamicallyInstantiateDeployments = (sdkProvider: SdkProvider) => {
 }
 
 // reverse engineered from node_modules/aws-cdk/bin/cdk.js
-export const bootstrapCdkToolkit = async (): Promise<CustomCdkToolkit> => {
+export const bootstrapCdkToolkit = async (configProps?: ConfigurationProps): Promise<CustomCdkToolkit> => {
   console.debug('loading configuration');
-  const configuration = new Configuration();
+  const configuration = new Configuration(configProps);
   // {
   //   _: ['diff' as any],
   //   'no-color': true

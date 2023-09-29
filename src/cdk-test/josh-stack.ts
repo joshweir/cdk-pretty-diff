@@ -15,6 +15,8 @@ export class JoshStack extends Stack {
   constructor(scope: App, id: string, props?: StackProps) {
     super(scope, id, props);
 
+    console.log('context check:', this.node.tryGetContext('foo'), this.node.tryGetContext('hello'));
+
     const table = new Table(this, TABLE_NAME, {
       partitionKey: {
         name: PARTITION_KEY,
