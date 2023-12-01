@@ -3,7 +3,7 @@
   "description": "Formatting tool for CDK Diff output. Inspired by Terraform prettyplan (https://github.com/chrislewisdev/prettyplan)",
   "author": "joshweir",
   "license": "MIT",
-  "version": "2.2.5",
+  "version": "2.2.6",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/joshweir/cdk-pretty-diff.git"
@@ -52,8 +52,8 @@
     "archiver": "5.3.1",
     "cdk-from-cfn": "0.83.0",
     "chalk": "4.1.2",
-    "camelcase": "8.0.0",
-    "decamelize": "6.0.0",
+    "camelcase": "6.3.0",
+    "decamelize": "5.0.1",
     "chokidar": "3.5.3",
     "colors": "1.4.0",
     "diff": "^5.0.0",
