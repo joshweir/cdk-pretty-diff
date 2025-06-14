@@ -18,7 +18,6 @@ const main = async () => {
     commandLineArguments: {
       _: [Command.DIFF],
       context: [
-        'foo=bar',
         'hello=world',
       ],
     }
