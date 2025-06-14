@@ -36,6 +36,7 @@ export class JoshStack extends Stack {
       environment: {
         'POOP': 'FOO2',
         'BAZ': 'BAR',
+        'hello': this.node.tryGetContext('hello'),
       }
     })
 

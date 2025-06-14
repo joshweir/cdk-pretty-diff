@@ -14,7 +14,7 @@ const info = quietMode ? noop : console.info;
 const debug = verboseMode ? console.debug : noop;
 
 const main = async () => {
-  const nicerDiffs = await getCustomDiff(app, { options: { context: { foo: 'bar', hello: 'world' } } });
+  const nicerDiffs = await getCustomDiff(app, { options: { context: { hello: 'world' } } });
   const html = renderCustomDiffToHtmlString(nicerDiffs, 'CDK Diff');
   writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
 };
