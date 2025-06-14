@@ -89,11 +89,9 @@ export const diffValidator = (thing: any): { diffCollectionKey: CdkDiffCategory;
   throw new Error(`invalid diff: ${JSON.stringify(thing, null, 2)}`);
 }
 
-
 export type CdkToolkitDeploymentsProp = 'cloudFormation' | 'deployments';
 
-export type CustomCdkToolkitExtraProps = {
-  cdkToolkitDeploymentsProp: CdkToolkitDeploymentsProp;
+export interface DiffOptions {
+  context?: Record<string, string>;
+  profile?: string;
 }
-
-export type CustomCdkToolkitProps = CdkToolkitProps & CustomCdkToolkitExtraProps

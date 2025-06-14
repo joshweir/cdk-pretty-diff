@@ -3,7 +3,7 @@
   "description": "Formatting tool for CDK Diff output. Inspired by Terraform prettyplan (https://github.com/chrislewisdev/prettyplan)",
   "author": "joshweir",
   "license": "MIT",
-  "version": "2.2.6",
+  "version": "3.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/joshweir/cdk-pretty-diff.git"
@@ -31,7 +31,7 @@
     "@aws-cdk/region-info": ">= 2.0.0",
     "@aws-cdk/toolkit-lib": ">= 1.1.1",
     "@aws-cdk/cli-plugin-contract": ">= 2.181.0",
-    "cdk-assets": ">= 2.1018.1",
+    "cdk-assets": ">= 2.1002.0",
     "constructs": "^10.0.0",
     "@aws-cdk/cx-api": ">= 2.201.0",
     "@types/diff": "^5.0.1",
@@ -39,7 +39,7 @@
     "@types/jest": "^26.0.0",
     "@types/node": "^24.0.1",
     "@types/through2": "^2.0.36",
-    "aws-cdk": ">= 2.1018.1",
+    "aws-cdk": "2.1017.0",
     "aws-cdk-lib": ">= 2.201.0",
     "aws-sdk": "2.1492.0",
     "jest": "^26.0.0",
@@ -74,7 +74,7 @@
     "@aws-cdk/cx-api": ">= 2.201.0",
     "@aws-cdk/toolkit-lib": ">= 1.1.1",
     "@aws-cdk/cli-plugin-contract": ">= 2.181.0",
-    "aws-cdk": ">= 2.1018.1",
+    "aws-cdk": ">= 2.1017.0",
     "aws-cdk-lib": ">= 2.201.0"
   },
   "bugs": {

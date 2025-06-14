@@ -1,20 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cfnDiff from '@aws-cdk/cloudformation-diff';
-import * as cxapi from '@aws-cdk/cx-api';
 import * as cxschema from '@aws-cdk/cloud-assembly-schema';
-// import {
-//   DiffOptions,
-// } from 'aws-cdk/lib/cli/cdk-toolkit';
-// import { Configuration, ConfigurationProps } from 'aws-cdk/lib/cli/user-configuration'
 import { SdkProvider } from 'aws-cdk/lib/api/aws-auth';
-import { CloudExecutable } from 'aws-cdk/lib/cxapp/cloud-executable';
-import { execProgram } from 'aws-cdk/lib/cxapp/exec';
 import * as colors from 'colors/safe';
-// import { asIoHelper } from 'aws-cdk/lib/api-private'
-// import { CliIoHost } from 'aws-cdk/lib/cli/io-host'
-import { GLOBAL_PLUGIN_HOST } from 'aws-cdk/lib/cli/singleton-plugin-host'
-
-import { CdkToolkitDeploymentsProp, CustomCdkToolkitProps, StackRawDiff } from './types';
+import { CdkToolkitDeploymentsProp, DiffOptions, StackRawDiff } from './types';
 
 // reverse engineered from:
 // aws-cdk/lib/diff (printStackDiff)
@@ -113,50 +102,6 @@ const buildLogicalToPathMap = (
   return map;
 };
 
-// class CustomCdkToolkit extends CdkToolkit {
-//   private cdkToolkitDeploymentsProp: CustomCdkToolkitProps['cdkToolkitDeploymentsProp'];
-//   constructor({ cdkToolkitDeploymentsProp, ...props }: CustomCdkToolkitProps) {
-//     console.debug('initializing CustomCdkToolkit super class');
-//     super(props);
-//     this.cdkToolkitDeploymentsProp = cdkToolkitDeploymentsProp;
-//   }
-
-//   // method is reverse engineered based on CdkTookit.diff method but returns a diff structure
-//   // where diff outputs formatted diff to a stream (ie. stderr)
-//   async getDiffObject(options: DiffOptions): Promise<StackRawDiff[]> {
-//     console.debug('selectStacksForDiff');
-//     const stacks = await (this as any).selectStacksForDiff(
-//       options.stackNames,
-//       options.exclusively
-//     );
-//     let diffs: StackRawDiff[] = [];
-//     if (options.templatePath !== undefined) {
-//       throw new Error('using template not supported by getDiffObject');
-//     }
-
-//     // Compare N stacks against deployed templates
-//     for (const stack of stacks.stackArtifacts) {
-//       console.debug(`readCurrentTemplate for stack: ${stack.displayName}`);
-//       // this is poop, but can't see another way? 
-//       // * Property 'props' is private and only accessible within class 'CdkToolkit'
-//       // * recent version of aws-cdk (~2.82.0) has changed CdkToolkitProps['cloudFormation'] -> CdkToolkitProps['deployments']
-//       const currentTemplate = await (
-//         (this as any).props
-//       )[this.cdkToolkitDeploymentsProp].readCurrentTemplate(stack);
-//       console.debug('cloudformation diff the stack');
-//       diffs.push({
-//         stackName: stack.displayName,
-//         rawDiff: filterCDKMetadata(
-//           cfnDiff.diffTemplate(currentTemplate, stack.template)
-//         ),
-//         logicalToPathMap: buildLogicalToPathMap(stack),
-//       });
-//     }
-
-//     return diffs;
-//   }
-// }
-
 const dynamicallyInstantiateDeployments = (sdkProvider: SdkProvider) => {
   let Deployments;
   let cdkToolkitDeploymentsProp: CdkToolkitDeploymentsProp = 'deployments';
@@ -183,147 +128,73 @@ const dynamicallyInstantiateDeployments = (sdkProvider: SdkProvider) => {
   }
 }
 
-// export async function getDiffObject(options: DiffOptions, config?: { 
-//   configProps?: ConfigurationProps
-// }) {
-//   // Load configuration with provided props
-//   const configuration = new Configuration(config?.configProps);
-//   await configuration.load();
-
-//   console.debug('loading sdk provider');
-//   const ioHost = CliIoHost.instance({
-//     logLevel: 'info',
-//     isTTY: process.stdout.isTTY,
-//     isCI: true,
-//     currentAction: 'diff',
-//   }, true);
-//   const ioHelper = asIoHelper(ioHost, 'diff');
-
-//   const sdkProvider = await SdkProvider.withAwsCliCompatibleDefaults({
-//     ioHelper,
-//     // profile: configuration.settings.get(['profile']),
-//   });
-
-//   console.debug('initializing CloudExecutable');
-//   let outDirLock: any;
-//   const cloudExecutable = new CloudExecutable({
-//     configuration,
-//     sdkProvider,
-//     ioHelper: ioHost.asIoHelper(),
-//     // execProgram return type changed in aws-cdk v2.61.0, 
-//     // therefore check if execProgram returned
-//     // object contains `assembly` prop, if so then return it
-//     synthesizer: async (aws, config) => {
-//       // Invoke 'execProgram', and copy the lock for the directory in the global
-//       // variable here. It will be released when the CLI exits. Locks are not re-entrant
-//       // so release it if we have to synthesize more than once (because of context lookups).
-//       await outDirLock?.release();
-//       const { assembly, lock } = await execProgram(aws, ioHost.asIoHelper(), config);
-      
-//       outDirLock = lock;
-//       return assembly;
-//     },
-//   });
-//   colors.disable();
-//   console.debug('loading plugins');
-
-//   async function loadPlugins(...settings: any[]) {
-//     for (const source of settings) {
-//       const plugins = source.get(['plugin']) || [];
-//       for (const plugin of plugins) {
-//         await GLOBAL_PLUGIN_HOST.load(plugin, ioHost);
-//       }
-//     }
-//   }
-//   await loadPlugins(configuration.settings);
-
-//   // Create the CloudFormation deployments service
-//   // const cfn = new CloudFormationDeployments({sdkProvider});
-//   const { deployments } = dynamicallyInstantiateDeployments(sdkProvider);
-
-//   const assembly = await cloudExecutable.synthesize();
-//   const stacks = assembly.assembly.stacks;
-
-//   // Reload the synthesized artifact using cxapi
-//   // const stackArtifact = cxapi.CloudFormationStackArtifact.fromManifest(
-//   //   assembly,
-//   //   stack.artifactId,
-//   //   synthesized.getStackArtifact(stack.artifactId).manifest
-//   // ) as cxapi.CloudFormationStackArtifact;
-
-//   // // Get the current template
-//   // const currentTemplate = await deployments.readCurrentTemplate(stackArtifact);
-
-//   let diffs: StackRawDiff[] = [];
-  
-//   // Compare each stack against deployed templates
-//   for (const stack of stacks) {
-//     const currentTemplate = await deployments.readCurrentTemplate(stack);
-    
-//     diffs.push({
-//       stackName: stack.displayName,
-//       rawDiff: filterCDKMetadata(
-//         cfnDiff.diffTemplate(currentTemplate, stack.template)
-//       ),
-//       logicalToPathMap: buildLogicalToPathMap(stack)
-//     });
-//   }
-
-//   return diffs;
-// }
-
-export interface DiffOptions {
-  context?: Record<string, string>;
-}
-
 export async function getDiffObject(app: cdk.App, options?: DiffOptions) {
+  // If we have new context, we need to create a new app with the merged context
   if (options?.context) {
-    Object.entries(options.context).forEach(([key, value]) => {
-      app.node.setContext(key, value);
+    // Get existing context
+    const existingContext = app.node.tryGetContext('');
+    
+    // Create new merged context
+    const mergedContext = {
+      ...existingContext,
+      ...options.context
+    };
+    
+    // Create a new App with merged context
+    const tempApp = new cdk.App({
+      context: mergedContext,
     });
+
+    // For each stack in the original app, create a new stack in the temp app
+    for (const child of app.node.children) {
+      if (child instanceof cdk.Stack) {
+        const originalStack = child as cdk.Stack;
+        
+        // Create a new stack of the same type
+        const stackProps = {
+          env: {
+            account: originalStack.account,
+            region: originalStack.region
+          },
+          // Copy other stack properties that might be important
+          stackName: originalStack.stackName,
+          description: originalStack.templateOptions.description,
+          terminationProtection: originalStack.terminationProtection,
+          tags: originalStack.tags.tagValues(),
+        };
+
+        // Use reflection to create a new instance of the same stack class
+        const stackClass = Object.getPrototypeOf(originalStack).constructor;
+        new stackClass(tempApp, originalStack.node.id, stackProps);
+      }
+    }
+
+    // Use the temporary app for synthesis
+    const assembly = tempApp.synth();
+    return await generateDiffs(assembly, options);
   }
 
+  // If no new context, use the original app
   const assembly = app.synth();
+  return await generateDiffs(assembly, options);
+}
 
-  console.debug('loading sdk provider');
-  // const ioHost = CliIoHost.instance({
-  //   logLevel: 'info',
-  //   isTTY: process.stdout.isTTY,
-  //   isCI: true,
-  //   currentAction: 'diff',
-  // }, true);
-  // const ioHelper = asIoHelper(ioHost, 'diff');
-
+// Helper function to generate diffs from an assembly
+async function generateDiffs(assembly: cdk.cx_api.CloudAssembly, options?: DiffOptions): Promise<StackRawDiff[]> {
   const sdkProvider = await SdkProvider.withAwsCliCompatibleDefaults({
     ioHelper: {
       defaults: {
         debug: (input: string) => { console.debug(input) },
       }
     },
-  } as any);
+  } as any, options?.profile);
 
   colors.disable();
 
-  // Create the CloudFormation deployments service
-  // const cfn = new CloudFormationDeployments({sdkProvider});
   const { deployments } = dynamicallyInstantiateDeployments(sdkProvider);
-
-  const stacks = assembly.stacks;
-
-  // Reload the synthesized artifact using cxapi
-  // const stackArtifact = cxapi.CloudFormationStackArtifact.fromManifest(
-  //   assembly,
-  //   stack.artifactId,
-  //   synthesized.getStackArtifact(stack.artifactId).manifest
-  // ) as cxapi.CloudFormationStackArtifact;
-
-  // // Get the current template
-  // const currentTemplate = await deployments.readCurrentTemplate(stackArtifact);
-
-  let diffs: StackRawDiff[] = [];
+  const diffs: StackRawDiff[] = [];
   
-  // Compare each stack against deployed templates
-  for (const stack of stacks) {
+  for (const stack of assembly.stacks) {
     const currentTemplate = await deployments.readCurrentTemplate(stack);
     
     diffs.push({
@@ -337,101 +208,3 @@ export async function getDiffObject(app: cdk.App, options?: DiffOptions) {
 
   return diffs;
 }
-
-async function readCurrentTemplate(sdkProvider: any, stack: cdk.cx_api.CloudFormationStackArtifact) {
-  const cfn = await sdkProvider.forEnvironment(
-    stack.environment.region, 
-    stack.environment.account
-  );
-  
-  try {
-    const response = await cfn.cloudFormation().getTemplate({
-      StackName: stack.stackName,
-      TemplateStage: 'Original'
-    }).promise();
-    return JSON.parse(response.TemplateBody || '{}');
-  } catch (error: any) {
-    if (error.code === 'ValidationError') {
-      return {};
-    }
-    throw error;
-  }
-}
-
-// reverse engineered from node_modules/aws-cdk/bin/cdk.js
-// export const bootstrapCdkToolkit = async (configProps?: ConfigurationProps): Promise<CustomCdkToolkit> => {
-//   console.debug('loading configuration');
-//   const configuration = new Configuration(configProps);
-//   // {
-//   //   _: ['diff' as any],
-//   //   'no-color': true
-//   // }
-//   await configuration.load();
-//   console.debug('loading sdk provider');
-//   const ioHost = CliIoHost.instance({
-//     logLevel: 'info',
-//     isTTY: process.stdout.isTTY,
-//     isCI: true,
-//     currentAction: 'diff',
-//   }, true);
-//   const ioHelper = asIoHelper(ioHost, 'diff');
-//   const sdkProvider = await SdkProvider.withAwsCliCompatibleDefaults({
-//     ioHelper,
-//     // profile: configuration.settings.get(['profile']),
-//   });
-//   console.debug('initializing CloudExecutable');
-//   let outDirLock: any;
-//   const cloudExecutable = new CloudExecutable({
-//     configuration,
-//     sdkProvider,
-//     ioHelper: ioHost.asIoHelper(),
-//     // execProgram return type changed in aws-cdk v2.61.0, 
-//     // therefore check if execProgram returned
-//     // object contains `assembly` prop, if so then return it
-//     synthesizer: async (aws, config) => {
-//       // Invoke 'execProgram', and copy the lock for the directory in the global
-//       // variable here. It will be released when the CLI exits. Locks are not re-entrant
-//       // so release it if we have to synthesize more than once (because of context lookups).
-//       await outDirLock?.release();
-//       const { assembly, lock } = await execProgram(aws, ioHost.asIoHelper(), config);
-      
-//       outDirLock = lock;
-//       return assembly;
-//     },
-//   });
-//   colors.disable();
-//   console.debug('loading plugins');
-
-//   async function loadPlugins(...settings: any[]) {
-//     for (const source of settings) {
-//       const plugins = source.get(['plugin']) || [];
-//       for (const plugin of plugins) {
-//         await GLOBAL_PLUGIN_HOST.load(plugin, ioHost);
-//       }
-//     }
-//   }
-//   await loadPlugins(configuration.settings);
-
-//   console.debug('initializing CustomCdkToolkit');
-//   const { deployments, cdkToolkitDeploymentsProp } = dynamicallyInstantiateDeployments(sdkProvider);
-//   return new CustomCdkToolkit({
-//     cloudExecutable,
-//     configuration,
-//     sdkProvider,
-//     cdkToolkitDeploymentsProp,
-//     deployments,
-//     verbose: false,
-//     ignoreErrors: false,
-//     strict: true,
-//   });
-//   // return new CustomCdkToolkit({
-//   //   cloudExecutable,
-//   //   configuration,
-//   //   sdkProvider,
-//   //   cdkToolkitDeploymentsProp,
-//   //   [cdkToolkitDeploymentsProp]: deployments,
-//   //   verbose: false,
-//   //   ignoreErrors: false,
-//   //   strict: true,
-//   // } as any);
-// };

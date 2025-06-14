@@ -1,4 +1,5 @@
 import { getCustomDiff } from '../src/index';
+import { app } from '../src/cdk-test'
 
 const noop = (...args: any[]) => undefined;
 
@@ -11,7 +12,7 @@ const info = quietMode ? noop : console.info;
 const debug = verboseMode ? console.debug : noop;
 
 const main = async () => {
-  const nicerDiffs = await getCustomDiff();
+  const nicerDiffs = await getCustomDiff(app);
   console.log('****** START CUSTOM DIFF ******');
   console.log(JSON.stringify(nicerDiffs, null, 2));
   console.log('****** END CUSTOM DIFF ******');
