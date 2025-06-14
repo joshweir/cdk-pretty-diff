@@ -4,13 +4,15 @@ import * as cxschema from '@aws-cdk/cloud-assembly-schema';
 import {
   CdkToolkit,
   DiffOptions,
-} from 'aws-cdk/lib/cdk-toolkit';
-import { Configuration, ConfigurationProps } from 'aws-cdk/lib/settings';
+} from 'aws-cdk/lib/cli/cdk-toolkit';
+import { Configuration, ConfigurationProps } from 'aws-cdk/lib/cli/user-configuration'
 import { SdkProvider } from 'aws-cdk/lib/api/aws-auth';
-import { CloudExecutable } from 'aws-cdk/lib/api/cxapp/cloud-executable';
-import { execProgram } from 'aws-cdk/lib/api/cxapp/exec';
-import { PluginHost } from 'aws-cdk/lib/api/plugin';
+import { CloudExecutable } from 'aws-cdk/lib/cxapp/cloud-executable';
+import { execProgram } from 'aws-cdk/lib/cxapp/exec';
 import * as colors from 'colors/safe';
+import { asIoHelper } from 'aws-cdk/lib/api-private'
+import { CliIoHost } from 'aws-cdk/lib/cli/io-host'
+import { GLOBAL_PLUGIN_HOST } from 'aws-cdk/lib/cli/singleton-plugin-host'
 
 import { CdkToolkitDeploymentsProp, CustomCdkToolkitProps, StackRawDiff } from './types';
 
@@ -184,50 +186,49 @@ export const bootstrapCdkToolkit = async (configProps?: ConfigurationProps): Pro
   // }
   await configuration.load();
   console.debug('loading sdk provider');
+  const ioHost = CliIoHost.instance({
+    logLevel: 'info',
+    isTTY: process.stdout.isTTY,
+    isCI: true,
+    currentAction: 'diff',
+  }, true);
+  const ioHelper = asIoHelper(ioHost, 'diff');
   const sdkProvider = await SdkProvider.withAwsCliCompatibleDefaults({
+    ioHelper,
     // profile: configuration.settings.get(['profile']),
   });
   console.debug('initializing CloudExecutable');
+  let outDirLock: any;
   const cloudExecutable = new CloudExecutable({
     configuration,
     sdkProvider,
+    ioHelper: ioHost.asIoHelper(),
     // execProgram return type changed in aws-cdk v2.61.0, 
     // therefore check if execProgram returned
     // object contains `assembly` prop, if so then return it
-    synthesizer: async (...args: Parameters<typeof execProgram>) => {
-      const execProgramResult = await execProgram(...args);
+    synthesizer: async (aws, config) => {
+      // Invoke 'execProgram', and copy the lock for the directory in the global
+      // variable here. It will be released when the CLI exits. Locks are not re-entrant
+      // so release it if we have to synthesize more than once (because of context lookups).
+      await outDirLock?.release();
+      const { assembly, lock } = await execProgram(aws, ioHost.asIoHelper(), config);
       
-      return (execProgramResult as any).assembly || execProgramResult;
+      outDirLock = lock;
+      return assembly;
     },
   });
   colors.disable();
   console.debug('loading plugins');
 
-  function loadPlugins(...settings: any[]) {
-    const loaded = new Set();
+  async function loadPlugins(...settings: any[]) {
     for (const source of settings) {
       const plugins = source.get(['plugin']) || [];
       for (const plugin of plugins) {
-        const resolved = tryResolve(plugin);
-        if (loaded.has(resolved)) {
-          continue;
-        }
-        console.debug(`Loading plug-in: ${plugin} from ${resolved}`);
-
-        PluginHost.instance.load(plugin);
-
-        loaded.add(resolved);
-      }
-    }
-    function tryResolve(plugin: string) {
-      try {
-        return require.resolve(plugin);
-      } catch (e) {
-        throw new Error(`Unable to resolve plug-in: ${plugin}`);
+        await GLOBAL_PLUGIN_HOST.load(plugin, ioHost);
       }
     }
   }
-  loadPlugins(configuration.settings);
+  await loadPlugins(configuration.settings);
 
   console.debug('initializing CustomCdkToolkit');
   const { deployments, cdkToolkitDeploymentsProp } = dynamicallyInstantiateDeployments(sdkProvider);
@@ -236,9 +237,19 @@ export const bootstrapCdkToolkit = async (configProps?: ConfigurationProps): Pro
     configuration,
     sdkProvider,
     cdkToolkitDeploymentsProp,
-    [cdkToolkitDeploymentsProp]: deployments,
+    deployments,
     verbose: false,
     ignoreErrors: false,
     strict: true,
-  } as any);
+  });
+  // return new CustomCdkToolkit({
+  //   cloudExecutable,
+  //   configuration,
+  //   sdkProvider,
+  //   cdkToolkitDeploymentsProp,
+  //   [cdkToolkitDeploymentsProp]: deployments,
+  //   verbose: false,
+  //   ignoreErrors: false,
+  //   strict: true,
+  // } as any);
 };

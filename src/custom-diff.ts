@@ -1,4 +1,4 @@
-import { ConfigurationProps } from 'aws-cdk/lib/settings';
+import { ConfigurationProps } from 'aws-cdk/lib/cli/user-configuration';
 import { NicerStackDiff, StackRawDiff } from './types';
 import { transformDiff } from './transform';
 import { getRawDiff } from './raw-diff';

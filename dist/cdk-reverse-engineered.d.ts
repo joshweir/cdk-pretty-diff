@@ -1,5 +1,5 @@
-import { CdkToolkit, DiffOptions } from 'aws-cdk/lib/cdk-toolkit';
-import { ConfigurationProps } from 'aws-cdk/lib/settings';
+import { CdkToolkit, DiffOptions } from 'aws-cdk/lib/cli/cdk-toolkit';
+import { ConfigurationProps } from 'aws-cdk/lib/cli/user-configuration';
 import { CustomCdkToolkitProps, StackRawDiff } from './types';
 export declare const deepSubstituteBracedLogicalIds: (logicalToPathMap: any) => (rows: any) => any;
 declare class CustomCdkToolkit extends CdkToolkit {

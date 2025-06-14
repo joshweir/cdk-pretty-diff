@@ -1,5 +1,5 @@
 import * as cfnDiff from '@aws-cdk/cloudformation-diff';
-import { CdkToolkitProps } from 'aws-cdk/lib/cdk-toolkit';
+import { CdkToolkitProps } from 'aws-cdk/lib/cli/cdk-toolkit';
 
 export const cdkDiffCategories = ['iamChanges', 'securityGroup', 'resources', 'parameters', 'metadata', 'mappings', 'conditions', 'outputs', 'unknown', 'description'] as const;
 export type CdkDiffCategories = typeof cdkDiffCategories;
