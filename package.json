@@ -14,7 +14,8 @@
     "cdk pretty diff",
     "cdk diff pretty",
     "cdk deploy",
-    "pretty"
+    "pretty",
+    "cdk diff formatter"
   ],
   "scripts": {
     "build": "tsc",
