@@ -1,11 +1,7 @@
-import { CdkToolkit, DiffOptions } from 'aws-cdk/lib/cli/cdk-toolkit';
-import { ConfigurationProps } from 'aws-cdk/lib/cli/user-configuration';
-import { CustomCdkToolkitProps, StackRawDiff } from './types';
+import * as cdk from 'aws-cdk-lib';
+import { StackRawDiff } from './types';
 export declare const deepSubstituteBracedLogicalIds: (logicalToPathMap: any) => (rows: any) => any;
-declare class CustomCdkToolkit extends CdkToolkit {
-    private cdkToolkitDeploymentsProp;
-    constructor({ cdkToolkitDeploymentsProp, ...props }: CustomCdkToolkitProps);
-    getDiffObject(options: DiffOptions): Promise<StackRawDiff[]>;
+export interface DiffOptions {
+    context?: Record<string, string>;
 }
-export declare const bootstrapCdkToolkit: (configProps?: ConfigurationProps) => Promise<CustomCdkToolkit>;
-export {};
+export declare function getDiffObject(app: cdk.App, options?: DiffOptions): Promise<StackRawDiff[]>;

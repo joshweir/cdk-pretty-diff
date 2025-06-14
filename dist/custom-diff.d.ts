@@ -1,6 +1,7 @@
-import { ConfigurationProps } from 'aws-cdk/lib/cli/user-configuration';
 import { NicerStackDiff, StackRawDiff } from './types';
-export declare const getCustomDiff: (props?: {
+import * as cdk from "aws-cdk-lib";
+import { DiffOptions } from './cdk-reverse-engineered';
+export declare const getCustomDiff: (app: cdk.App, props?: {
     rawDiff?: StackRawDiff[];
-    configProps?: ConfigurationProps;
+    options?: DiffOptions;
 }) => Promise<NicerStackDiff[]>;
