@@ -1,7 +1,7 @@
 import { resolve } from 'path';
 import { writeFileSync } from 'fs';
-import { Command, ConfigurationProps } from 'aws-cdk/lib/settings';
 import { getCustomDiff, renderCustomDiffToHtmlString } from '../src/index';
+import { app } from '../src/cdk-test'
 
 const noop = (...args: any[]) => undefined;
 
@@ -14,15 +14,7 @@ const info = quietMode ? noop : console.info;
 const debug = verboseMode ? console.debug : noop;
 
 const main = async () => {
-  const configProps: ConfigurationProps = {
-    commandLineArguments: {
-      _: [Command.DIFF],
-      context: [
-        'hello=world',
-      ],
-    }
-  }
-  const nicerDiffs = await getCustomDiff({ configProps });
+  const nicerDiffs = await getCustomDiff(app, { options: { context: { hello: 'world' } } });
   const html = renderCustomDiffToHtmlString(nicerDiffs, 'CDK Diff');
   writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
 };

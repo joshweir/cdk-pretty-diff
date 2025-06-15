@@ -1,18 +1,9 @@
+import * as cdk from 'aws-cdk-lib';
 import * as cfnDiff from '@aws-cdk/cloudformation-diff';
-import * as cxapi from '@aws-cdk/cx-api';
 import * as cxschema from '@aws-cdk/cloud-assembly-schema';
-import {
-  CdkToolkit,
-  DiffOptions,
-} from 'aws-cdk/lib/cdk-toolkit';
-import { Configuration, ConfigurationProps } from 'aws-cdk/lib/settings';
 import { SdkProvider } from 'aws-cdk/lib/api/aws-auth';
-import { CloudExecutable } from 'aws-cdk/lib/api/cxapp/cloud-executable';
-import { execProgram } from 'aws-cdk/lib/api/cxapp/exec';
-import { PluginHost } from 'aws-cdk/lib/api/plugin';
 import * as colors from 'colors/safe';
-
-import { CdkToolkitDeploymentsProp, CustomCdkToolkitProps, StackRawDiff } from './types';
+import { CdkToolkitDeploymentsProp, DiffOptions, StackRawDiff } from './types';
 
 // reverse engineered from:
 // aws-cdk/lib/diff (printStackDiff)
@@ -100,7 +91,7 @@ const normalizedLogicalIdPath = (logicalToPathMap: any) => (logicalId: any) => {
 // copied from
 // aws-cdk/lib/diff (function not exported)
 const buildLogicalToPathMap = (
-  stack: cxapi.CloudFormationStackArtifact
+  stack: cdk.cx_api.CloudFormationStackArtifact
 ): Record<string, string> => {
   const map: Record<string, any> = {};
   for (const md of stack.findMetadataByType(
@@ -110,50 +101,6 @@ const buildLogicalToPathMap = (
   }
   return map;
 };
-
-class CustomCdkToolkit extends CdkToolkit {
-  private cdkToolkitDeploymentsProp: CustomCdkToolkitProps['cdkToolkitDeploymentsProp'];
-  constructor({ cdkToolkitDeploymentsProp, ...props }: CustomCdkToolkitProps) {
-    console.debug('initializing CustomCdkToolkit super class');
-    super(props);
-    this.cdkToolkitDeploymentsProp = cdkToolkitDeploymentsProp;
-  }
-
-  // method is reverse engineered based on CdkTookit.diff method but returns a diff structure
-  // where diff outputs formatted diff to a stream (ie. stderr)
-  async getDiffObject(options: DiffOptions): Promise<StackRawDiff[]> {
-    console.debug('selectStacksForDiff');
-    const stacks = await (this as any).selectStacksForDiff(
-      options.stackNames,
-      options.exclusively
-    );
-    let diffs: StackRawDiff[] = [];
-    if (options.templatePath !== undefined) {
-      throw new Error('using template not supported by getDiffObject');
-    }
-
-    // Compare N stacks against deployed templates
-    for (const stack of stacks.stackArtifacts) {
-      console.debug(`readCurrentTemplate for stack: ${stack.displayName}`);
-      // this is poop, but can't see another way? 
-      // * Property 'props' is private and only accessible within class 'CdkToolkit'
-      // * recent version of aws-cdk (~2.82.0) has changed CdkToolkitProps['cloudFormation'] -> CdkToolkitProps['deployments']
-      const currentTemplate = await (
-        (this as any).props
-      )[this.cdkToolkitDeploymentsProp].readCurrentTemplate(stack);
-      console.debug('cloudformation diff the stack');
-      diffs.push({
-        stackName: stack.displayName,
-        rawDiff: filterCDKMetadata(
-          cfnDiff.diffTemplate(currentTemplate, stack.template)
-        ),
-        logicalToPathMap: buildLogicalToPathMap(stack),
-      });
-    }
-
-    return diffs;
-  }
-}
 
 const dynamicallyInstantiateDeployments = (sdkProvider: SdkProvider) => {
   let Deployments;
@@ -166,7 +113,14 @@ const dynamicallyInstantiateDeployments = (sdkProvider: SdkProvider) => {
     cdkToolkitDeploymentsProp = 'cloudFormation';
   }
 
-  const deployments = new Deployments({ sdkProvider });
+  const deployments = new Deployments({
+    sdkProvider,
+    ioHelper: {
+      defaults: {
+        debug: (input: string) => { console.debug(input) },
+      }
+    },
+  });
 
   return {
     deployments,
@@ -174,71 +128,83 @@ const dynamicallyInstantiateDeployments = (sdkProvider: SdkProvider) => {
   }
 }
 
-// reverse engineered from node_modules/aws-cdk/bin/cdk.js
-export const bootstrapCdkToolkit = async (configProps?: ConfigurationProps): Promise<CustomCdkToolkit> => {
-  console.debug('loading configuration');
-  const configuration = new Configuration(configProps);
-  // {
-  //   _: ['diff' as any],
-  //   'no-color': true
-  // }
-  await configuration.load();
-  console.debug('loading sdk provider');
-  const sdkProvider = await SdkProvider.withAwsCliCompatibleDefaults({
-    // profile: configuration.settings.get(['profile']),
-  });
-  console.debug('initializing CloudExecutable');
-  const cloudExecutable = new CloudExecutable({
-    configuration,
-    sdkProvider,
-    // execProgram return type changed in aws-cdk v2.61.0, 
-    // therefore check if execProgram returned
-    // object contains `assembly` prop, if so then return it
-    synthesizer: async (...args: Parameters<typeof execProgram>) => {
-      const execProgramResult = await execProgram(...args);
-      
-      return (execProgramResult as any).assembly || execProgramResult;
-    },
-  });
-  colors.disable();
-  console.debug('loading plugins');
+export async function getDiffObject(app: cdk.App, options?: DiffOptions) {
+  // If we have new context, we need to create a new app with the merged context
+  if (options?.context) {
+    // Get existing context
+    const existingContext = app.node.tryGetContext('');
+    
+    // Create new merged context
+    const mergedContext = {
+      ...existingContext,
+      ...options.context
+    };
+    
+    // Create a new App with merged context
+    const tempApp = new cdk.App({
+      context: mergedContext,
+    });
 
-  function loadPlugins(...settings: any[]) {
-    const loaded = new Set();
-    for (const source of settings) {
-      const plugins = source.get(['plugin']) || [];
-      for (const plugin of plugins) {
-        const resolved = tryResolve(plugin);
-        if (loaded.has(resolved)) {
-          continue;
-        }
-        console.debug(`Loading plug-in: ${plugin} from ${resolved}`);
+    // For each stack in the original app, create a new stack in the temp app
+    for (const child of app.node.children) {
+      if (child instanceof cdk.Stack) {
+        const originalStack = child as cdk.Stack;
+        
+        // Create a new stack of the same type
+        const stackProps = {
+          env: {
+            account: originalStack.account,
+            region: originalStack.region
+          },
+          // Copy other stack properties that might be important
+          stackName: originalStack.stackName,
+          description: originalStack.templateOptions.description,
+          terminationProtection: originalStack.terminationProtection,
+          tags: originalStack.tags.tagValues(),
+        };
 
-        PluginHost.instance.load(plugin);
-
-        loaded.add(resolved);
+        // Use reflection to create a new instance of the same stack class
+        const stackClass = Object.getPrototypeOf(originalStack).constructor;
+        new stackClass(tempApp, originalStack.node.id, stackProps);
       }
     }
-    function tryResolve(plugin: string) {
-      try {
-        return require.resolve(plugin);
-      } catch (e) {
-        throw new Error(`Unable to resolve plug-in: ${plugin}`);
-      }
-    }
+
+    // Use the temporary app for synthesis
+    const assembly = tempApp.synth();
+    return await generateDiffs(assembly, options);
   }
-  loadPlugins(configuration.settings);
 
-  console.debug('initializing CustomCdkToolkit');
-  const { deployments, cdkToolkitDeploymentsProp } = dynamicallyInstantiateDeployments(sdkProvider);
-  return new CustomCdkToolkit({
-    cloudExecutable,
-    configuration,
-    sdkProvider,
-    cdkToolkitDeploymentsProp,
-    [cdkToolkitDeploymentsProp]: deployments,
-    verbose: false,
-    ignoreErrors: false,
-    strict: true,
-  } as any);
-};
+  // If no new context, use the original app
+  const assembly = app.synth();
+  return await generateDiffs(assembly, options);
+}
+
+// Helper function to generate diffs from an assembly
+async function generateDiffs(assembly: cdk.cx_api.CloudAssembly, options?: DiffOptions): Promise<StackRawDiff[]> {
+  const sdkProvider = await SdkProvider.withAwsCliCompatibleDefaults({
+    ioHelper: {
+      defaults: {
+        debug: (input: string) => { console.debug(input) },
+      }
+    },
+  } as any, options?.profile);
+
+  colors.disable();
+
+  const { deployments } = dynamicallyInstantiateDeployments(sdkProvider);
+  const diffs: StackRawDiff[] = [];
+  
+  for (const stack of assembly.stacks) {
+    const currentTemplate = await deployments.readCurrentTemplate(stack);
+    
+    diffs.push({
+      stackName: stack.displayName,
+      rawDiff: filterCDKMetadata(
+        cfnDiff.diffTemplate(currentTemplate, stack.template)
+      ),
+      logicalToPathMap: buildLogicalToPathMap(stack)
+    });
+  }
+
+  return diffs;
+}

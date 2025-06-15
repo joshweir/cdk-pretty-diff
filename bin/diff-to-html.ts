@@ -1,6 +1,7 @@
 import { resolve } from 'path';
 import { writeFileSync } from 'fs';
 import { getCustomDiff, renderCustomDiffToHtmlString } from '../src/index';
+import { app } from '../src/cdk-test'
 
 const noop = (...args: any[]) => undefined;
 
@@ -13,7 +14,7 @@ const info = quietMode ? noop : console.info;
 const debug = verboseMode ? console.debug : noop;
 
 const main = async () => {
-  const nicerDiffs = await getCustomDiff();
+  const nicerDiffs = await getCustomDiff(app);
   const html = renderCustomDiffToHtmlString(nicerDiffs, 'CDK Diff');
   writeFileSync(resolve(__dirname, '../cdk.out/diff.html'), html);
 };

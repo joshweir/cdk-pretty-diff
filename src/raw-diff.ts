@@ -1,10 +1,7 @@
-import { ConfigurationProps } from 'aws-cdk/lib/settings';
-import { StackRawDiff } from './types';
-import { bootstrapCdkToolkit } from './cdk-reverse-engineered';
+import { DiffOptions, StackRawDiff } from './types';
+import { getDiffObject } from './cdk-reverse-engineered';
+import * as cdk from "aws-cdk-lib";
 
-export const getRawDiff = async (configProps?: ConfigurationProps): Promise<StackRawDiff[]> => {
-  const cdkToolkit = await bootstrapCdkToolkit(configProps);
-  return cdkToolkit.getDiffObject({
-    stackNames: [],
-  });
+export const getRawDiff = async (app: cdk.App, options?: DiffOptions): Promise<StackRawDiff[]> => {
+  return await getDiffObject(app, options);
 };

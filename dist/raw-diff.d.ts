@@ -1,3 +1,3 @@
-import { ConfigurationProps } from 'aws-cdk/lib/settings';
-import { StackRawDiff } from './types';
-export declare const getRawDiff: (configProps?: ConfigurationProps) => Promise<StackRawDiff[]>;
+import { DiffOptions, StackRawDiff } from './types';
+import * as cdk from "aws-cdk-lib";
+export declare const getRawDiff: (app: cdk.App, options?: DiffOptions) => Promise<StackRawDiff[]>;
